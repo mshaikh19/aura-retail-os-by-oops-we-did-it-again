@@ -7,7 +7,6 @@ class KioskInterface:
     def __init__(self, coreSystem):
         self.core = coreSystem
 
-    # 🛒 Purchase
     def purchaseItem(self, productId, quantity):
         if not productId or quantity <= 0:
             print("Invalid input for purchase")
@@ -18,7 +17,6 @@ class KioskInterface:
         command = PurchaseCommand(productId, quantity)
         self.core.executeCommand(command)
 
-    # 💸 Refund
     def refundTransaction(self, productId, quantity):
         if not productId or quantity <= 0:
             print("Invalid input for refund")
@@ -29,7 +27,6 @@ class KioskInterface:
         command = RefundCommand(productId, quantity)
         self.core.executeCommand(command)
 
-    # 📦 Restock
     def restockInventory(self, productId, quantity):
         if not productId or quantity <= 0:
             print("Invalid input for restock")
@@ -40,7 +37,6 @@ class KioskInterface:
         command = RestockCommand(productId, quantity)
         self.core.executeCommand(command)
 
-    # ⚙️ Diagnostics
     def runDiagnostics(self):
         print("[INTERFACE] Running diagnostics...")
         print(f"System Status: {self.core.getSystemStatus()}")
