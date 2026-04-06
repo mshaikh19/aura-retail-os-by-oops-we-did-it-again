@@ -93,66 +93,156 @@
 #         input("\nPress Enter to continue...")
 
 # runKiosk()
+
 from core.kiosk_core_system import KioskCoreSystem
-from core.commands.purchase_command import PurchaseCommand
-from core.commands.refund_command import RefundCommand
-from core.commands.restock_command import RestockCommand
-
+from core.kioskInterface import KioskInterface
 import os
+import time
 
-# 🎨 Color Scheme
+# 🎨 Colors
 class Colors:
     HEADER = '\033[96m'
-    MENU = '\033[94m'
-    SECTION = '\033[93m'
+    BOX = '\033[94m'
+    TEXT = '\033[97m'
     SUCCESS = '\033[92m'
     ERROR = '\033[91m'
-    INPUT = '\033[97m'
+    WARNING = '\033[93m'
     RESET = '\033[0m'
 
 
-# 🔧 Utilities
-def clear_screen():
+# 🔧 Utility Functions
+def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def print_header():
-    print(Colors.HEADER + "=" * 70)
-    print(" " * 20 + "AURA RETAIL OS")
-    print(" " * 12 + "SMART KIOSK MANAGEMENT SYSTEM")
-    print("=" * 70 + Colors.RESET)
+def pause():
+    input(Colors.TEXT + "\nPress Enter to continue..." + Colors.RESET)
 
 
-def print_menu():
-    print(Colors.MENU + "\nMAIN MENU")
-    print("-" * 70)
-    print("1. Purchase Item")
-    print("2. Refund Item")
-    print("3. Restock Inventory")
-    print("4. Run Diagnostics")
-    print("5. View Command History")
-    print("6. Exit")
-    print("-" * 70 + Colors.RESET)
+def draw_box(title, content_lines):
+    print(Colors.BOX + "+" + "-" * 58 + "+")
+    print(f"| {title.center(56)} |")
+    print("+" + "-" * 58 + "+")
+    
+    for line in content_lines:
+        print(f"| {line.ljust(56)} |")
+    
+    print("+" + "-" * 58 + "+" + Colors.RESET)
 
 
-def print_section(title):
-    print(Colors.SECTION + "\n" + "-" * 70)
-    print(title)
-    print("-" * 70 + Colors.RESET)
+# 🎬 Screens
+
+def welcome_screen():
+    clear()
+    draw_box(
+        "WELCOME",
+        [
+            "AURA RETAIL OS",
+            "",
+            "Smart Automated Kiosk System",
+            "",
+            "Initializing system..."
+        ]
+    )
+    time.sleep(1.5)
 
 
-def get_int(prompt):
+def main_menu():
+    clear()
+    draw_box(
+        "MAIN MENU",
+        [
+            "1. Purchase Item",
+            "2. Refund Item",
+            "3. Restock Inventory",
+            "4. Diagnostics",
+            "5. Exit"
+        ]
+    )
+    return input("\nSelect option: ")
+
+
+def purchase_screen(interface):
+    clear()
+    draw_box("PURCHASE ITEM", [])
+
+    product = input("Enter product: ")
     try:
-        return int(input(Colors.INPUT + prompt + Colors.RESET))
+        qty = int(input("Enter quantity: "))
     except ValueError:
-        print(Colors.ERROR + "Invalid number input." + Colors.RESET)
-        return None
+        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
+        pause()
+        return
+
+    clear()
+    draw_box("PROCESSING", ["Please wait..."])
+    time.sleep(1)
+
+    interface.purchaseItem(product, qty)
+
+    print(Colors.SUCCESS + "\nPurchase completed." + Colors.RESET)
+    pause()
 
 
-# 🚀 MAIN SYSTEM
+def refund_screen(interface):
+    clear()
+    draw_box("REFUND ITEM", [])
+
+    product = input("Enter product: ")
+    try:
+        qty = int(input("Enter quantity: "))
+    except ValueError:
+        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
+        pause()
+        return
+
+    clear()
+    draw_box("PROCESSING", ["Processing refund..."])
+    time.sleep(1)
+
+    interface.refundTransaction(product, qty)
+
+    print(Colors.SUCCESS + "\nRefund completed." + Colors.RESET)
+    pause()
+
+
+def restock_screen(interface):
+    clear()
+    draw_box("RESTOCK INVENTORY", [])
+
+    product = input("Enter product: ")
+    try:
+        qty = int(input("Enter quantity: "))
+    except ValueError:
+        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
+        pause()
+        return
+
+    interface.restockInventory(product, qty)
+
+    print(Colors.SUCCESS + "\nInventory updated." + Colors.RESET)
+    pause()
+
+
+def diagnostics_screen(core):
+    clear()
+
+    status = core.getSystemStatus()
+
+    draw_box(
+        "SYSTEM DIAGNOSTICS",
+        [
+            f"System Status: {status}",
+            "",
+            f"Commands Executed: {len(core.getCommandHistory())}"
+        ]
+    )
+
+    pause()
+
+
+# 🚀 MAIN APP
 def run_kiosk():
-
-    # Demo inventory
     inventory = {
         "milk": 10,
         "bread": 5,
@@ -160,71 +250,32 @@ def run_kiosk():
     }
 
     core = KioskCoreSystem(inventorySystem=inventory)
+    interface = KioskInterface(core)
+
+    welcome_screen()
 
     while True:
-        clear_screen()
-        print_header()
-        print_menu()
+        choice = main_menu()
 
-        choice = input(Colors.INPUT + "\nEnter choice: " + Colors.RESET).strip()
-
-        # 🛒 PURCHASE
         if choice == "1":
-            print_section("PURCHASE ITEM")
-            product = input("Enter product name: ")
-            qty = get_int("Enter quantity: ")
+            purchase_screen(interface)
 
-            if qty:
-                command = PurchaseCommand(product, qty)
-                core.executeCommand(command)
-
-        # 💸 REFUND
         elif choice == "2":
-            print_section("REFUND ITEM")
-            product = input("Enter product name: ")
-            qty = get_int("Enter quantity: ")
+            refund_screen(interface)
 
-            if qty:
-                command = RefundCommand(product, qty)
-                core.executeCommand(command)
-
-        # 📦 RESTOCK
         elif choice == "3":
-            print_section("RESTOCK INVENTORY")
-            product = input("Enter product name: ")
-            qty = get_int("Enter quantity: ")
+            restock_screen(interface)
 
-            if qty:
-                command = RestockCommand(product, qty)
-                core.executeCommand(command)
-
-        # ⚙️ DIAGNOSTICS
         elif choice == "4":
-            print_section("SYSTEM DIAGNOSTICS")
-            print(f"System Status: {core.getSystemStatus()}")
+            diagnostics_screen(core)
 
-        # 📜 HISTORY
         elif choice == "5":
-            print_section("COMMAND HISTORY")
-
-            history = core.getCommandHistory()
-
-            if not history:
-                print("No commands executed yet.")
-            else:
-                for i, cmd in enumerate(history, 1):
-                    print(f"{i}. {cmd.__class__.__name__}")
-
-        # 🚪 EXIT
-        elif choice == "6":
-            print(Colors.ERROR + "\nShutting down system..." + Colors.RESET)
+            clear()
+            draw_box("SHUTDOWN", ["System shutting down..."])
             break
 
         else:
-            print(Colors.ERROR + "\nInvalid choice. Try again." + Colors.RESET)
+            print(Colors.ERROR + "Invalid option" + Colors.RESET)
+            time.sleep(1)
 
-        input(Colors.INPUT + "\nPress Enter to continue..." + Colors.RESET)
-
-
-if __name__ == "__main__":
-    run_kiosk()
+run_kiosk()
