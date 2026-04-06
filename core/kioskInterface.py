@@ -1,31 +1,46 @@
+from core.commands.purchase_command import PurchaseCommand
+from core.commands.refund_command import RefundCommand
+from core.commands.restock_command import RestockCommand
+
+
 class KioskInterface:
     def __init__(self, coreSystem):
         self.core = coreSystem
 
+    # 🛒 Purchase
     def purchaseItem(self, productId, quantity):
         if not productId or quantity <= 0:
             print("Invalid input for purchase")
             return
         
-        print(f"Request: Purchase {quantity} of {productId}")
-        self.core.handleRequest("purchase", productId, quantity)
+        print(f"[INTERFACE] Purchase request: {quantity} x {productId}")
 
-    def refundTransaction(self, transactionId):
-        if not transactionId:
-            print("Invalid transaction ID")
+        command = PurchaseCommand(productId, quantity)
+        self.core.executeCommand(command)
+
+    # 💸 Refund
+    def refundTransaction(self, productId, quantity):
+        if not productId or quantity <= 0:
+            print("Invalid input for refund")
             return
         
-        print(f"Request: Refund transaction {transactionId}")
-        self.core.handle_request("refund", transactionId)
+        print(f"[INTERFACE] Refund request: {quantity} x {productId}")
 
+        command = RefundCommand(productId, quantity)
+        self.core.executeCommand(command)
+
+    # 📦 Restock
     def restockInventory(self, productId, quantity):
         if not productId or quantity <= 0:
             print("Invalid input for restock")
             return
         
-        print(f"Request: Restock {quantity} of {productId}")
-        self.core.handleRequest("restock", productId, quantity)
+        print(f"[INTERFACE] Restock request: {quantity} x {productId}")
 
+        command = RestockCommand(productId, quantity)
+        self.core.executeCommand(command)
+
+    # ⚙️ Diagnostics
     def runDiagnostics(self):
-        print("Request: Running diagnostics...")
-        self.core.handleRequest("diagnostics")
+        print("[INTERFACE] Running diagnostics...")
+        print(f"System Status: {self.core.getSystemStatus()}")
