@@ -8,33 +8,35 @@ class PaymentSystem:
     def makePayment(self, method, amount):
         print("\n[PaymentSystem] Starting payment...")
 
-        if method == "UPI":
-            processor = UPIAdapter()
-        elif method == "CARD":
-            processor = CardAdapter()
-        elif method == "WALLET":
-            processor = WalletAdapter()
-        else:
+        processor = self._getProcessor(method)
+        if processor is None:
             print("[PaymentSystem] Invalid payment method")
-            return
+            return False
 
-        processor.processPayment(amount)
+        result = processor.processPayment(amount)
 
         print("[PaymentSystem] Payment completed")
+        return result
 
     def refund(self, method, amount):
         print("\n[PaymentSystem] Starting refund...")
 
-        if method == "UPI":
-            processor = UPIAdapter()
-        elif method == "CARD":
-            processor = CardAdapter()
-        elif method == "WALLET":
-            processor = WalletAdapter()
-        else:
+        processor = self._getProcessor(method)
+        if processor is None:
             print("[PaymentSystem] Invalid payment method")
-            return
+            return False
 
-        processor.refundPayment(amount)
+        result = processor.refundPayment(amount)
 
         print("[PaymentSystem] Refund completed")
+        return result
+
+    def _getProcessor(self, method):
+        if method == "UPI":
+            return UPIAdapter()
+        elif method == "CARD":
+            return CardAdapter()
+        elif method == "WALLET":
+            return WalletAdapter()
+        else:
+            return None
