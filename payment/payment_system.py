@@ -1,4 +1,6 @@
 from payment.adapters.upi_adapter import UPIAdapter
+from payment.adapters.card_adapter import CardAdapter
+from payment.adapters.wallet_adapter import WalletAdapter
 
 
 class PaymentSystem:
@@ -8,6 +10,10 @@ class PaymentSystem:
 
         if method == "UPI":
             processor = UPIAdapter()
+        elif method == "CARD":
+            processor = CardAdapter()
+        elif method == "WALLET":
+            processor = WalletAdapter()
         else:
             print("[PaymentSystem] Invalid payment method")
             return
@@ -21,6 +27,10 @@ class PaymentSystem:
 
         if method == "UPI":
             processor = UPIAdapter()
+        elif method == "CARD":
+            processor = CardAdapter()
+        elif method == "WALLET":
+            processor = WalletAdapter()
         else:
             print("[PaymentSystem] Invalid payment method")
             return
