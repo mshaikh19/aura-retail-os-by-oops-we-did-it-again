@@ -19,9 +19,18 @@ class SimpleProduct(Product):
             raise Exception(f"Not enough stock for {self.model.name}")
 
         self.model.stock -= qty
+    
+    def addStock(self, qty):
+        if qty <= 0:
+            raise ValueError("Quantity must be positive")
+
+        self.model.stock += qty
 
     def getPrice(self):
         return self.model.price
+
+    def getName(self):
+        return self.model.name
 
     def __repr__(self):
         return f"SimpleProduct({self.model.name}, Stock={self.model.stock})"
