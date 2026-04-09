@@ -1,10 +1,7 @@
-from core.kiosk_core import KioskCoreSystem
-from core.kiosk_interface import KioskInterface
+from core.kiosk_core_system import KioskCoreSystem
+from core.kioskInterface import KioskInterface
 
 from payment.payment_system import PaymentSystem
-from payment.adapters.upi_adapter import UPIAdapter
-from payment.adapters.card_adapter import CardAdapter
-from payment.adapters.wallet_adapter import WalletAdapter
 
 import os
 import time
@@ -39,7 +36,6 @@ def draw_box(title, lines):
     print("+" + "-" * 60 + "+" + Colors.RESET)
 
 
-# 💳 Payment Selection
 def select_payment_method():
     clear()
     draw_box("SELECT PAYMENT METHOD", [
@@ -51,22 +47,29 @@ def select_payment_method():
     choice = input("Choose option: ")
 
     if choice == "1":
-        return UPIAdapter()
+        return "UPI"
     elif choice == "2":
-        return CardAdapter()
+        return "CARD"
     elif choice == "3":
-        return WalletAdapter()
+        return "WALLET"
     else:
-        print(Colors.ERROR + "Invalid payment method" + Colors.RESET)
+        print("Invalid payment method")
         return None
 
 
 # 🛒 Purchase Screen (with payment)
-def purchase_screen(interface, core):
+def purchase_screen(core, inventory_products):
+    from core.commands.purchase_command import PurchaseCommand
+
     clear()
     draw_box("PURCHASE ITEM", [])
 
-    product = input("Enter product: ")
+    product_name = input("Enter product name: ").strip().lower()
+
+    if product_name not in inventory_products:
+        print(Colors.ERROR + f"Product '{product_name}' not found in inventory." + Colors.RESET)
+        pause()
+        return
 
     try:
         qty = int(input("Enter quantity: "))
@@ -75,45 +78,69 @@ def purchase_screen(interface, core):
         pause()
         return
 
-    # 💳 Payment Selection
-    payment_processor = select_payment_method()
+    payment_method = select_payment_method()
 
-    if not payment_processor:
+    if not payment_method:
         pause()
         return
 
-    # Attach payment system to core
-    core.paymentSystem = PaymentSystem(payment_processor)
+    core.paymentSystem = PaymentSystem()
+
+    product = inventory_products[product_name]
 
     clear()
     draw_box("PROCESSING PAYMENT", ["Please wait..."])
     time.sleep(1)
 
-    interface.purchaseItem(product, qty)
+    command = PurchaseCommand(product, qty, payment_method)
+    core.executeCommand(command)
 
     print(Colors.SUCCESS + "\nTransaction completed." + Colors.RESET)
     pause()
 
 
 # 💸 Refund Screen
-def refund_screen(interface):
+def refund_screen(core):
+    from core.commands.refund_command import RefundCommand
+
     clear()
     draw_box("REFUND", [])
 
-    txn = input("Enter transaction ID: ")
+    try:
+        amount = float(input("Enter refund amount (Rs.): "))
+    except:
+        print("Invalid amount")
+        pause()
+        return
 
-    interface.refundTransaction(txn)
+    payment_method = select_payment_method()
+
+    if not payment_method:
+        pause()
+        return
+
+    core.paymentSystem = PaymentSystem()
+
+    command = RefundCommand(amount, payment_method)
+    core.executeCommand(command)
 
     print(Colors.SUCCESS + "\nRefund processed." + Colors.RESET)
     pause()
 
 
 # 📦 Restock Screen
-def restock_screen(interface):
+def restock_screen(core, inventory_products):
+    from core.commands.restock_command import RestockCommand
+
     clear()
     draw_box("RESTOCK", [])
 
-    product = input("Enter product: ")
+    product_name = input("Enter product name: ").strip().lower()
+
+    if product_name not in inventory_products:
+        print(Colors.ERROR + f"Product '{product_name}' not found in inventory." + Colors.RESET)
+        pause()
+        return
 
     try:
         qty = int(input("Enter quantity: "))
@@ -122,7 +149,10 @@ def restock_screen(interface):
         pause()
         return
 
-    interface.restockInventory(product, qty)
+    product = inventory_products[product_name]
+
+    command = RestockCommand(product, qty)
+    core.executeCommand(command)
 
     print(Colors.SUCCESS + "\nInventory updated." + Colors.RESET)
     pause()
@@ -142,14 +172,17 @@ def diagnostics_screen(core):
 
 # 🚀 MAIN
 def runKiosk():
-    inventory = {
-        "milk": 10,
-        "bread": 5,
-        "eggs": 20
+    from inventory.components.simpleProduct import SimpleProduct
+    from models.productModel import ProductModel
+
+    # Pre-seeded inventory with proper SimpleProduct objects
+    inventory_products = {
+        "milk":  SimpleProduct(ProductModel("P001", "milk",  1.50, stock=10)),
+        "bread": SimpleProduct(ProductModel("P002", "bread", 2.00, stock=5)),
+        "eggs":  SimpleProduct(ProductModel("P003", "eggs",  3.00, stock=20)),
     }
 
-    core = KioskCoreSystem(inventorySystem=inventory)
-    interface = KioskInterface(core)
+    core = KioskCoreSystem()
 
     while True:
         clear()
@@ -165,13 +198,13 @@ def runKiosk():
         choice = input("\nSelect option: ")
 
         if choice == "1":
-            purchase_screen(interface, core)
+            purchase_screen(core, inventory_products)
 
         elif choice == "2":
-            refund_screen(interface)
+            refund_screen(core)
 
         elif choice == "3":
-            restock_screen(interface)
+            restock_screen(core, inventory_products)
 
         elif choice == "4":
             diagnostics_screen(core)
@@ -186,4 +219,4 @@ def runKiosk():
             time.sleep(1)
 
 
-run_kiosk()
+runKiosk()
