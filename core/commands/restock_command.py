@@ -1,24 +1,24 @@
 from .command import Command
 
 
-class RefundCommand(Command):
-    def __init__(self, amount, paymentMethod):
-        self.amount = amount
-        self.paymentMethod = paymentMethod
+class RestockCommand(Command):
+    def __init__(self, product, quantity):
+        self.product = product
+        self.quantity = quantity
 
     def execute(self, core):
-        print(f"[Refund] Processing refund of ₹{self.amount}")
+        if self.product is None:
+            raise Exception("Invalid product")
 
-        # 1. Validate input
-        if self.amount <= 0:
-            raise Exception("Invalid refund amount")
+        if self.quantity <= 0:
+            raise Exception("Invalid quantity")
 
-        # 2. Check payment system
-        if core.paymentSystem is None:
-            raise Exception("Payment system unavailable")
+        print(f"[Restock] Adding {self.quantity} units of {self.product.getName()}")
 
-        # 3. Process refund
-        core.paymentSystem.refund(self.paymentMethod, self.amount)
+        # Use proper method from SimpleProduct
+        self.product.addStock(self.quantity)
 
-        print("[Refund] Refund completed successfully.")
+        print(f"[Restock] New stock: {self.product.getStock()}")
+        print("[Restock] Restock completed successfully.")
+
         self.log()
