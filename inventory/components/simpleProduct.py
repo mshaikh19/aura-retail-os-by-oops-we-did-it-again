@@ -1,7 +1,7 @@
 #This class achieves Abstraction, Encapsulation, and SOC(Separation of Concerns)
 
 from .product import Product
-from models.product_model import ProductModel
+from models.productModel import ProductModel
 
 class SimpleProduct(Product):
 

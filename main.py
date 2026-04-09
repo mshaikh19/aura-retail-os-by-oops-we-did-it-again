@@ -1,99 +1,3 @@
-# from core.kiosk_core_system import KioskCoreSystem
-# from core.kioskInterface import KioskInterface
-# import os
-
-# def clearScreen():
-#     os.system('cls' if os.name == 'nt' else 'clear')
-
-
-# def printHeader():
-#     print("=" * 60)
-#     print(" " * 18 + "AURA RETAIL OS")
-#     print(" " * 10 + "AUTOMATED KIOSK SYSTEM")
-#     print("=" * 60)
-
-
-# def printMenu():
-#     print("\nMAIN MENU")
-#     print("-" * 60)
-#     print("1. Purchase Item")
-#     print("2. Refund Item")
-#     print("3. Restock Inventory")
-#     print("4. Run Diagnostics")
-#     print("5. Exit")
-#     print("-" * 60)
-
-
-# def printSection(title):
-#     print("\n" + "-" * 60)
-#     print(f"{title}")
-#     print("-" * 60)
-
-
-# def getIntegerInput(prompt):
-#     try:
-#         return int(input(prompt))
-#     except ValueError:
-#         print("Invalid input. Please enter a number.")
-#         return None
-
-
-# def runKiosk():
-#     inventory = {
-#         "milk": 10,
-#         "bread": 5,
-#         "eggs": 20
-#     }
-
-#     core = KioskCoreSystem(inventorySystem=inventory)
-#     interface = KioskInterface(core)
-
-#     while True:
-#         clearScreen()
-#         printHeader()
-#         printMenu()
-
-#         choice = input("Enter choice: ").strip()
-
-#         if choice == "1":
-#             printSection("PURCHASE ITEM")
-#             product = input("Enter product name: ").strip()
-#             qty = getIntegerInput("Enter quantity: ")
-
-#             if qty:
-#                 interface.purchaseItem(product, qty)
-
-#         elif choice == "2":
-#             printSection("REFUND ITEM")
-#             product = input("Enter product name: ").strip()
-#             qty = getIntegerInput("Enter quantity: ")
-
-#             if qty:
-#                 interface.refundTransaction(product, qty)
-
-#         elif choice == "3":
-#             printSection("RESTOCK INVENTORY")
-#             product = input("Enter product name: ").strip()
-#             qty = getIntegerInput("Enter quantity: ")
-
-#             if qty:
-#                 interface.restockInventory(product, qty)
-
-#         elif choice == "4":
-#             printSection("SYSTEM DIAGNOSTICS")
-#             interface.runDiagnostics()
-
-#         elif choice == "5":
-#             print("\nShutting down system...")
-#             break
-
-#         else:
-#             print("\nInvalid selection. Please try again.")
-
-#         input("\nPress Enter to continue...")
-
-# runKiosk()
-
 from core.kiosk_core_system import KioskCoreSystem
 from core.kioskInterface import KioskInterface
 import os
@@ -111,15 +15,15 @@ class Colors:
 
 
 # 🔧 Utility Functions
-def clear():
+def clearScreen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def pause():
+def pauseScreen():
     input(Colors.TEXT + "\nPress Enter to continue..." + Colors.RESET)
 
 
-def draw_box(title, content_lines):
+def drawBox(title, content_lines):
     print(Colors.BOX + "+" + "-" * 58 + "+")
     print(f"| {title.center(56)} |")
     print("+" + "-" * 58 + "+")
@@ -132,9 +36,9 @@ def draw_box(title, content_lines):
 
 # 🎬 Screens
 
-def welcome_screen():
-    clear()
-    draw_box(
+def welcomeScreen():
+    clearScreen()
+    drawBox(
         "WELCOME",
         [
             "AURA RETAIL OS",
@@ -147,9 +51,9 @@ def welcome_screen():
     time.sleep(1.5)
 
 
-def main_menu():
-    clear()
-    draw_box(
+def mainMenu():
+    clearScreen()
+    drawBox(
         "MAIN MENU",
         [
             "1. Purchase Item",
@@ -162,74 +66,89 @@ def main_menu():
     return input("\nSelect option: ")
 
 
-def purchase_screen(interface):
-    clear()
-    draw_box("PURCHASE ITEM", [])
+def purchaseScreen(interface, products):
+    clearScreen()
+    drawBox("PURCHASE ITEM", [])
 
-    product = input("Enter product: ")
+    product_name = input("Enter product: ").lower()
+    product = products.get(product_name)
+    if not product:
+        print(Colors.ERROR + "Product not found" + Colors.RESET)
+        pauseScreen()
+        return
+
     try:
         qty = int(input("Enter quantity: "))
     except ValueError:
         print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
-        pause()
+        pauseScreen()
         return
 
-    clear()
-    draw_box("PROCESSING", ["Please wait..."])
+    paymentMethod = input("Enter payment method (UPI/CARD/WALLET): ").strip().upper()
+
+    clearScreen()
+    drawBox("PROCESSING", ["Please wait..."])
     time.sleep(1)
 
-    interface.purchaseItem(product, qty)
+    interface.purchaseItem(product, qty, paymentMethod)
 
     print(Colors.SUCCESS + "\nPurchase completed." + Colors.RESET)
-    pause()
+    pauseScreen()
 
 
-def refund_screen(interface):
-    clear()
-    draw_box("REFUND ITEM", [])
+def refundScreen(interface):
+    clearScreen()
+    drawBox("REFUND ITEM", [])
 
-    product = input("Enter product: ")
     try:
-        qty = int(input("Enter quantity: "))
+        amount = float(input("Enter refund amount: "))
     except ValueError:
-        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
-        pause()
+        print(Colors.ERROR + "Invalid amount" + Colors.RESET)
+        pauseScreen()
         return
 
-    clear()
-    draw_box("PROCESSING", ["Processing refund..."])
+    paymentMethod = input("Enter payment method (UPI/CARD/WALLET): ").strip().upper()
+
+    clearScreen()
+    drawBox("PROCESSING", ["Processing refund..."])
     time.sleep(1)
 
-    interface.refundTransaction(product, qty)
+    interface.refundTransaction(amount, paymentMethod)
 
     print(Colors.SUCCESS + "\nRefund completed." + Colors.RESET)
-    pause()
+    pauseScreen()
 
 
-def restock_screen(interface):
-    clear()
-    draw_box("RESTOCK INVENTORY", [])
+def restockScreen(interface, products):
+    clearScreen()
+    drawBox("RESTOCK INVENTORY", [])
 
-    product = input("Enter product: ")
+    product_name = input("Enter product: ").lower()
+    product = products.get(product_name)
+    if not product:
+        print(Colors.ERROR + "Product not found" + Colors.RESET)
+        pauseScreen()
+        return
+
     try:
         qty = int(input("Enter quantity: "))
     except ValueError:
         print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
-        pause()
+        pauseScreen()
         return
 
     interface.restockInventory(product, qty)
 
     print(Colors.SUCCESS + "\nInventory updated." + Colors.RESET)
-    pause()
+    pauseScreen()
 
 
-def diagnostics_screen(core):
-    clear()
+def diagnosticsScreen(core):
+    clearScreen()
 
     status = core.getSystemStatus()
 
-    draw_box(
+    drawBox(
         "SYSTEM DIAGNOSTICS",
         [
             f"System Status: {status}",
@@ -238,44 +157,52 @@ def diagnostics_screen(core):
         ]
     )
 
-    pause()
+    pauseScreen()
 
 
 # 🚀 MAIN APP
-def run_kiosk():
-    inventory = {
-        "milk": 10,
-        "bread": 5,
-        "eggs": 20
+def runKiosk():
+    from payment.payment_system import PaymentSystem
+    from models.productModel import ProductModel
+    from inventory.components.simpleProduct import SimpleProduct
+
+    paymentSystem = PaymentSystem()
+
+    catalog_data = {
+        "milk": ProductModel("P1", "milk", 50.0, 10),
+        "bread": ProductModel("P2", "bread", 30.0, 5),
+        "eggs": ProductModel("P3", "eggs", 10.0, 20)
     }
 
-    core = KioskCoreSystem(inventorySystem=inventory)
+    products = {name: SimpleProduct(model) for name, model in catalog_data.items()}
+
+    core = KioskCoreSystem(inventorySystem=products, paymentSystem=paymentSystem)
     interface = KioskInterface(core)
 
-    welcome_screen()
+    welcomeScreen()
 
     while True:
-        choice = main_menu()
+        choice = mainMenu()
 
         if choice == "1":
-            purchase_screen(interface)
+            purchaseScreen(interface, products)
 
         elif choice == "2":
-            refund_screen(interface)
+            refundScreen(interface)
 
         elif choice == "3":
-            restock_screen(interface)
+            restockScreen(interface, products)
 
         elif choice == "4":
-            diagnostics_screen(core)
+            diagnosticsScreen(core)
 
         elif choice == "5":
-            clear()
-            draw_box("SHUTDOWN", ["System shutting down..."])
+            clearScreen()
+            drawBox("SHUTDOWN", ["System shutting down..."])
             break
 
         else:
             print(Colors.ERROR + "Invalid option" + Colors.RESET)
             time.sleep(1)
 
-run_kiosk()
+runKiosk()
