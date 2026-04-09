@@ -58,7 +58,7 @@ def select_payment_method():
 
 
 # 🛒 Purchase Screen (with payment)
-def purchase_screen(core, inventory_products):
+def purchase_screen(core, inventory):
     from core.commands.purchase_command import PurchaseCommand
 
     clear()
@@ -66,7 +66,9 @@ def purchase_screen(core, inventory_products):
 
     product_name = input("Enter product name: ").strip().lower()
 
-    if product_name not in inventory_products:
+    product = inventory.get_product(product_name)
+
+    if not product:
         print(Colors.ERROR + f"Product '{product_name}' not found in inventory." + Colors.RESET)
         pause()
         return
@@ -85,8 +87,6 @@ def purchase_screen(core, inventory_products):
         return
 
     core.paymentSystem = PaymentSystem()
-
-    product = inventory_products[product_name]
 
     clear()
     draw_box("PROCESSING PAYMENT", ["Please wait..."])
@@ -129,7 +129,7 @@ def refund_screen(core):
 
 
 # 📦 Restock Screen
-def restock_screen(core, inventory_products):
+def restock_screen(core, inventory):
     from core.commands.restock_command import RestockCommand
 
     clear()
@@ -137,7 +137,9 @@ def restock_screen(core, inventory_products):
 
     product_name = input("Enter product name: ").strip().lower()
 
-    if product_name not in inventory_products:
+    product = inventory.get_product(product_name)
+
+    if not product:
         print(Colors.ERROR + f"Product '{product_name}' not found in inventory." + Colors.RESET)
         pause()
         return
@@ -149,12 +151,17 @@ def restock_screen(core, inventory_products):
         pause()
         return
 
-    product = inventory_products[product_name]
-
     command = RestockCommand(product, qty)
     core.executeCommand(command)
 
     print(Colors.SUCCESS + "\nInventory updated." + Colors.RESET)
+    pause()
+
+# 📋 Inventory Screen
+def inventory_screen(inventory):
+    clear()
+    draw_box("INVENTORY", [])
+    inventory.show_all_products()
     pause()
 
 
@@ -174,6 +181,24 @@ def diagnostics_screen(core):
 def runKiosk():
     from inventory.components.simpleProduct import SimpleProduct
     from models.productModel import ProductModel
+    import inventory.components.inventoryManager as inv_mgr
+
+    # Monkey-patch SimpleProduct to map getPrice -> get_price and getStock -> get_stock
+    # since the original inventoryManager.py tries to use the get_price and get_stock variants.
+    SimpleProduct.get_price = SimpleProduct.getPrice
+    SimpleProduct.get_stock = SimpleProduct.getStock
+
+    # Construct the InventoryManager class inside main.py
+    class InventoryManager:
+        def __init__(self, products):
+            self.products = products
+
+        def get_product(self, product_id):
+            return self.products.get(product_id)
+
+        # Bind the functions from the module as methods
+        show_product = inv_mgr.show_product
+        show_all_products = inv_mgr.show_all_products
 
     # Pre-seeded inventory with proper SimpleProduct objects
     inventory_products = {
@@ -182,7 +207,10 @@ def runKiosk():
         "eggs":  SimpleProduct(ProductModel("P003", "eggs",  3.00, stock=20)),
     }
 
-    core = KioskCoreSystem()
+    # Integrate the dynamic InventoryManager class
+    inventory = InventoryManager(inventory_products)
+
+    core = KioskCoreSystem(inventorySystem=inventory)
 
     while True:
         clear()
@@ -191,25 +219,29 @@ def runKiosk():
             "1. Purchase",
             "2. Refund",
             "3. Restock",
-            "4. Diagnostics",
-            "5. Exit"
+            "4. View Inventory",
+            "5. Diagnostics",
+            "6. Exit"
         ])
 
         choice = input("\nSelect option: ")
 
         if choice == "1":
-            purchase_screen(core, inventory_products)
+            purchase_screen(core, inventory)
 
         elif choice == "2":
             refund_screen(core)
 
         elif choice == "3":
-            restock_screen(core, inventory_products)
+            restock_screen(core, inventory)
 
         elif choice == "4":
-            diagnostics_screen(core)
+            inventory_screen(inventory)
 
         elif choice == "5":
+            diagnostics_screen(core)
+
+        elif choice == "6":
             clear()
             draw_box("EXIT", ["Shutting down system..."])
             break
