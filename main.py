@@ -2,8 +2,12 @@ from core.kiosk_core_system import KioskCoreSystem
 from core.kioskInterface import KioskInterface
 import os
 import time
+import inventory.components.inventoryManager as inventoryManager
+from inventory.components.simpleProduct import SimpleProduct
 
-# 🎨 Colors
+"""
+    Color codes for the kiosk interface
+"""
 class Colors:
     HEADER = '\033[96m'
     BOX = '\033[94m'
@@ -13,8 +17,13 @@ class Colors:
     WARNING = '\033[93m'
     RESET = '\033[0m'
 
+"""
+    Utility Functions
+    clearScreen: To clear the terminal screen 
+    pauseScreen: To pause the terminal screen until the user presses Enter to continue 
+    drawBox: To draw a box around the text to make the interface look like a proper application
+"""
 
-# 🔧 Utility Functions
 def clearScreen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -34,7 +43,37 @@ def drawBox(title, content_lines):
     print("+" + "-" * 58 + "+" + Colors.RESET)
 
 
-# 🎬 Screens
+def selectPaymentMethod():
+    clearScreen()
+    drawBox(
+        "SELECT PAYMENT METHOD",
+        [
+            "1. UPI",
+            "2. Card",
+            "3. Wallet"
+        ]
+    )
+    while True:
+        choice = input("\nSelect payment option: ")
+        if choice == "1":
+            return "UPI"
+        elif choice == "2":
+            return "CARD"
+        elif choice == "3":
+            return "WALLET"
+        else:
+            print(Colors.ERROR + "Invalid option. Please choose 1, 2, or 3." + Colors.RESET)
+
+
+"""
+    Screens
+    welcomeScreen: Displays the welcome screen to make it look like the system is starting
+    mainMenu: Displays the main menu to let the user select an option
+    purchaseScreen: Displays the purchase screen to let the user purchase an item
+    refundScreen: Displays the refund screen to let the user refund an item
+    restockScreen: Displays the restock screen to let the user restock an item
+    diagnosticsScreen: Displays the diagnostics screen to let the user run diagnostics
+"""
 
 def welcomeScreen():
     clearScreen()
@@ -45,7 +84,7 @@ def welcomeScreen():
             "",
             "Smart Automated Kiosk System",
             "",
-            "Initializing system..."
+            "Initializing the system..."
         ]
     )
     time.sleep(1.5)
@@ -63,12 +102,26 @@ def mainMenu():
             "5. Exit"
         ]
     )
-    return input("\nSelect option: ")
+    return input("\nSelect an option: ")
 
 
 def purchaseScreen(interface, products):
     clearScreen()
     drawBox("PURCHASE ITEM", [])
+
+    
+    # Alias the method safely so the inventory manager function doesn't crash
+    if not hasattr(SimpleProduct, 'get_stock'):
+        SimpleProduct.get_stock = SimpleProduct.getStock
+
+    # Create dummy "self" wrapper for the loose function
+    class DummySelf:
+        def __init__(self, products_dict):
+            self.products = products_dict
+
+    print("\n")
+    inventoryManager.show_all_products(DummySelf(products))
+    print("\n")
 
     product_name = input("Enter product: ").lower()
     product = products.get(product_name)
@@ -84,7 +137,11 @@ def purchaseScreen(interface, products):
         pauseScreen()
         return
 
-    paymentMethod = input("Enter payment method (UPI/CARD/WALLET): ").strip().upper()
+    print("\n")
+    paymentMethod = selectPaymentMethod()
+
+    if not paymentMethod:
+        return
 
     clearScreen()
     drawBox("PROCESSING", ["Please wait..."])
@@ -107,7 +164,11 @@ def refundScreen(interface):
         pauseScreen()
         return
 
-    paymentMethod = input("Enter payment method (UPI/CARD/WALLET): ").strip().upper()
+    print("\n")
+    paymentMethod = selectPaymentMethod()
+
+    if not paymentMethod:
+        return
 
     clearScreen()
     drawBox("PROCESSING", ["Processing refund..."])
@@ -159,8 +220,6 @@ def diagnosticsScreen(core):
 
     pauseScreen()
 
-
-# 🚀 MAIN APP
 def runKiosk():
     from payment.payment_system import PaymentSystem
     from models.productModel import ProductModel
