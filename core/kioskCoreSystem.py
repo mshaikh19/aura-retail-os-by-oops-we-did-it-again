@@ -1,13 +1,13 @@
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None):
-
+        #creating subsystems 
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
 
         self.systemStatus = "ACTIVE"
         self.commandHistory = []
-
+        #keeps track of executed commands
     def executeCommand(self, command):
 
         # 1. Validate command object
