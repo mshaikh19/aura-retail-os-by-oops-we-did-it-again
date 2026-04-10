@@ -1,5 +1,6 @@
-from payment.interfaces.payment_processor import PaymentProcessor
+from payment.interfaces.paymentProcessor import PaymentProcessor
 
+#UPIAdapter handles UPI-specific payment logic. It follows the structure defined by PaymentProcessor
 class UPIAdapter(PaymentProcessor):
 
     def processPayment(self, amount):
