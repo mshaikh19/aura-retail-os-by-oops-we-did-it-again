@@ -1,6 +1,6 @@
 from core.kioskCoreSystem import KioskCoreSystem
 from core.kioskInterface import KioskInterface
-from payment.payment_system import PaymentSystem
+from payment.paymentSystem import PaymentSystem
 from models.productModel import ProductModel
 from inventory.components.simpleProduct import SimpleProduct
 
