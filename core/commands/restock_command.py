@@ -7,6 +7,7 @@ class RestockCommand(Command):
         self.quantity = quantity
 
     def execute(self, core):
+<<<<<<< HEAD
         if self.product is None:
             raise Exception("Invalid product")
 
@@ -21,4 +22,16 @@ class RestockCommand(Command):
         print(f"[Restock] New stock: {self.product.getStock()}")
         print("[Restock] Restock completed successfully.")
 
+=======
+        name = self.product.model.name if hasattr(self.product, "model") else getattr(self.product, "name", str(self.product))
+        print(f"[Restock] Adding {self.quantity} units of {name}")
+
+        if hasattr(self.product, "addStock"):
+            self.product.addStock(self.quantity)
+        elif core.inventorySystem:
+            print("[Restock] Updating inventory...")
+
+        print("[Restock] Restock completed successfully.")
+
+>>>>>>> features-maryam
         self.log()
