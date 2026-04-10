@@ -268,5 +268,4 @@ def runKiosk():
             print(Colors.ERROR + "Invalid option" + Colors.RESET)
             time.sleep(1)
 
->>>>>>> features-maryam
 runKiosk()
