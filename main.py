@@ -9,7 +9,6 @@ from inventory.components.simpleProduct import SimpleProduct
 """
     Color codes for the kiosk interface
 """
->>>>>>> features-maryam
 class Colors:
     HEADER = '\033[96m'
     BOX = '\033[94m'
