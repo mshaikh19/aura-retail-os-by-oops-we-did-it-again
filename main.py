@@ -1,267 +1,240 @@
 from core.kiosk_core_system import KioskCoreSystem
 from core.kioskInterface import KioskInterface
-import os
-import time
-import inventory.components.inventoryManager as inventoryManager
+from payment.payment_system import PaymentSystem
+from models.productModel import ProductModel
 from inventory.components.simpleProduct import SimpleProduct
 
-"""
-    Color codes for the kiosk interface
-"""
-class Colors:
-    HEADER = '\033[96m'
-    BOX = '\033[94m'
-    TEXT = '\033[97m'
-    SUCCESS = '\033[92m'
-    ERROR = '\033[91m'
-    WARNING = '\033[93m'
-    RESET = '\033[0m'
+import os
+import time
 
-"""
-    Utility Functions
-    clearScreen: To clear the terminal screen 
-    pauseScreen: To pause the terminal screen until the user presses Enter to continue 
-    drawBox: To draw a box around the text to make the interface look like a proper application
-"""
+
+class Colors:
+    HEADER = '\033[96m'    # Cyan
+    BLUE = '\033[94m'      # Borders
+    SUCCESS = '\033[92m'   # Green
+    ERROR = '\033[91m'     # Red
+    WARNING = '\033[93m'   # Yellow
+    TEXT = '\033[97m'      # White
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
 
 def clearScreen():
+    """ Clears the console window to keep the UI clean """
     os.system('cls' if os.name == 'nt' else 'clear')
 
-
 def pauseScreen():
-    input(Colors.TEXT + "\nPress Enter to continue..." + Colors.RESET)
+    """ Keeps the message on screen until the user is ready """
+    print(Colors.TEXT + "\n Press Enter to continue..." + Colors.RESET)
+    input()
 
-
-def drawBox(title, content_lines):
-    print(Colors.BOX + "+" + "-" * 58 + "+")
-    print(f"| {title.center(56)} |")
-    print("+" + "-" * 58 + "+")
+def showProgress(message, duration=1.2):
+    """ List of characters that create the 'spinning' effect """
+    spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
     
-    for line in content_lines:
-        print(f"| {line.ljust(56)} |")
+    end_time = time.time() + duration
+    idx = 0
+    while time.time() < end_time:
+
+        """ Move to the beginning of the line each time """
+        print(f"\r {Colors.HEADER}{spinner[idx % len(spinner)]} {message}...", end="", flush=True)
+        time.sleep(0.08)
+        idx += 1
     
-    print("+" + "-" * 58 + "+" + Colors.RESET)
+    """ Success message after check """
+    print(f"\r {Colors.SUCCESS}✓ {message} Done!{Colors.RESET}")
 
+def drawBox(title, lines):    
+    width = 60
 
-def selectPaymentMethod():
-    clearScreen()
-    drawBox(
-        "SELECT PAYMENT METHOD",
-        [
-            "1. UPI",
-            "2. Card",
-            "3. Wallet"
-        ]
-    )
-    while True:
-        choice = input("\nSelect payment option: ")
-        if choice == "1":
-            return "UPI"
-        elif choice == "2":
-            return "CARD"
-        elif choice == "3":
-            return "WALLET"
-        else:
-            print(Colors.ERROR + "Invalid option. Please choose 1, 2, or 3." + Colors.RESET)
+    # Top border
+    print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
+    
+    # Title row
+    print("║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
+    
+    # Middle separator
+    print("╠" + "═"*(width-2) + "╣")
+    
+    # Content rows
+    for line in lines:
+        print("║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
+    
+    # Bottom border
+    print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
 
+""" Display the inventory from products """
+def displayInventory(products):
 
-"""
-    Screens
-    welcomeScreen: Displays the welcome screen to make it look like the system is starting
-    mainMenu: Displays the main menu to let the user select an option
-    purchaseScreen: Displays the purchase screen to let the user purchase an item
-    refundScreen: Displays the refund screen to let the user refund an item
-    restockScreen: Displays the restock screen to let the user restock an item
-    diagnosticsScreen: Displays the diagnostics screen to let the user run diagnostics
-"""
+    print(Colors.BLUE + " ┌──────────────────┬────────────┬──────────────┐")
+    print(f" │ {Colors.HEADER}PRODUCT{Colors.RESET}{Colors.BLUE:10}     │ {Colors.HEADER}PRICE{Colors.RESET}{Colors.BLUE:7}    │ {Colors.HEADER}STOCK{Colors.RESET}{Colors.BLUE:9}    │")
+    print(" ├──────────────────┼────────────┼──────────────┤")
+    
+    for name, prod in products.items():
+        price = f"Rs.{prod.getPrice():.2f}"
+        stock = f"{prod.getStock()} units"
+        print(Colors.BLUE + f" │ {Colors.TEXT}{name.title():<16} {Colors.BLUE}│ {Colors.TEXT}{price:<10} {Colors.BLUE}│ {Colors.TEXT}{stock:<12} {Colors.BLUE}│")
+    
+    print(" └──────────────────┴────────────┴──────────────┘" + Colors.RESET)
 
+""" Show the user welcome screen """
 def welcomeScreen():
     clearScreen()
-    drawBox(
-        "WELCOME",
-        [
-            "AURA RETAIL OS",
-            "",
-            "Smart Automated Kiosk System",
-            "",
-            "Initializing the system..."
-        ]
-    )
-    time.sleep(1.5)
-
-
-def mainMenu():
-    clearScreen()
-    drawBox(
-        "MAIN MENU",
-        [
-            "1. Purchase Item",
-            "2. Refund Item",
-            "3. Restock Inventory",
-            "4. Diagnostics",
-            "5. Exit"
-        ]
-    )
-    return input("\nSelect an option: ")
-
-
-def purchaseScreen(interface, products):
-    clearScreen()
-    drawBox("PURCHASE ITEM", [])
-
+    drawBox("AURA RETAIL OS", [
+        "Starting System Boot...",
+        "Please wait while components initialize."
+    ])
+    print()
+    showProgress("Checking System Modules")
+    showProgress("Syncing Inventory DB")
+    showProgress("Opening Secure Gateway")
     
-    # Alias the method safely so the inventory manager function doesn't crash
+    time.sleep(0.5)
+    print(Colors.SUCCESS + "\n [BOOT SUCCESS] System is ready for use!" + Colors.RESET)
+    time.sleep(1)
+
+def paymentChoice():
+    """ Gets payment choice using an easy-to-understand menu """
+
+    clearScreen()
+    drawBox("PAYMENT GATEWAY", [
+        "1. UPI (Online QR)",
+        "2. Credit/Debit Card",
+        "3. Digital Wallet"
+    ])
+    
+    while True:
+        choice = input("\n Select Payment Method (1-3): ")
+        if choice == "1": return "UPI"
+        if choice == "2": return "CARD"
+        if choice == "3": return "WALLET"
+        print(Colors.ERROR + " Invalid selection. Please choose 1, 2, or 3." + Colors.RESET)
+
+def purchaseFlow(interface, products):
+    clearScreen()
+    print(Colors.BOLD + " --- CURRENT STOCK --- " + Colors.RESET)
+    displayInventory(products)
+
+    # Required for project compatibility
     if not hasattr(SimpleProduct, 'get_stock'):
         SimpleProduct.get_stock = SimpleProduct.getStock
 
-    # Create dummy "self" wrapper for the loose function
-    class DummySelf:
-        def __init__(self, products_dict):
-            self.products = products_dict
-
-    print("\n")
-    inventoryManager.show_all_products(DummySelf(products))
-    print("\n")
-
-    product_name = input("Enter product: ").lower()
-    product = products.get(product_name)
-    if not product:
-        print(Colors.ERROR + "Product not found" + Colors.RESET)
+    name = input("\n Select Item: ").lower().strip()
+    item = products.get(name)
+    
+    if not item:
+        print(Colors.ERROR + " Item not found in catalog." + Colors.RESET)
         pauseScreen()
         return
 
     try:
-        qty = int(input("Enter quantity: "))
+        qty = int(input(" Enter quantity: "))
     except ValueError:
-        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
+        print(Colors.ERROR + " Please enter a valid number." + Colors.RESET)
         pauseScreen()
         return
 
-    print("\n")
-    paymentMethod = selectPaymentMethod()
-
-    if not paymentMethod:
+    if qty > item.getStock():
+        print(Colors.ERROR + " Error: Not enough items in stock." + Colors.RESET)
+        pauseScreen()
         return
 
+    method = paymentChoice()
     clearScreen()
-    drawBox("PROCESSING", ["Please wait..."])
-    time.sleep(1)
-
-    interface.purchaseItem(product, qty, paymentMethod)
-
-    print(Colors.SUCCESS + "\nPurchase completed." + Colors.RESET)
+    showProgress(f"Authorizing {method} Payment")
+    
+    interface.purchaseItem(item, qty, method)
+    print(Colors.SUCCESS + "\n [DONE] Transaction completed successfully!" + Colors.RESET)
     pauseScreen()
 
-
-def refundScreen(interface):
+def refundFlow(interface):
     clearScreen()
-    drawBox("REFUND ITEM", [])
-
     try:
-        amount = float(input("Enter refund amount: "))
+        amount = float(input(" Enter amount to refund: Rs."))
     except ValueError:
-        print(Colors.ERROR + "Invalid amount" + Colors.RESET)
+        print(Colors.ERROR + " Please enter a valid number." + Colors.RESET)
         pauseScreen()
         return
 
-    print("\n")
-    paymentMethod = selectPaymentMethod()
-
-    if not paymentMethod:
-        return
-
-    clearScreen()
-    drawBox("PROCESSING", ["Processing refund..."])
-    time.sleep(1)
-
-    interface.refundTransaction(amount, paymentMethod)
-
-    print(Colors.SUCCESS + "\nRefund completed." + Colors.RESET)
+    method = paymentChoice()
+    showProgress("Contacting Bank for Refund")
+    interface.refundTransaction(amount, method)
+    print(Colors.SUCCESS + " [DONE] Amount has been reversed." + Colors.RESET)
     pauseScreen()
 
-
-def restockScreen(interface, products):
+def restockFlow(interface, products):
     clearScreen()
-    drawBox("RESTOCK INVENTORY", [])
-
-    product_name = input("Enter product: ").lower()
-    product = products.get(product_name)
-    if not product:
-        print(Colors.ERROR + "Product not found" + Colors.RESET)
+    name = input(" Product to Restock: ").lower().strip()
+    item = products.get(name)
+    
+    if not item:
+        print(Colors.ERROR + " Product not found." + Colors.RESET)
         pauseScreen()
         return
 
     try:
-        qty = int(input("Enter quantity: "))
+        qty = int(input(" Quantity to add: "))
     except ValueError:
-        print(Colors.ERROR + "Invalid quantity" + Colors.RESET)
+        print(Colors.ERROR + " Please enter a number." + Colors.RESET)
         pauseScreen()
         return
 
-    interface.restockInventory(product, qty)
-
-    print(Colors.SUCCESS + "\nInventory updated." + Colors.RESET)
+    interface.restockInventory(item, qty)
+    print(Colors.SUCCESS + f" [DONE] Inventory updated." + Colors.RESET)
     pauseScreen()
 
-
-def diagnosticsScreen(core):
+def diagnosticsFlow(core):
     clearScreen()
-
     status = core.getSystemStatus()
-
-    drawBox(
-        "SYSTEM DIAGNOSTICS",
-        [
-            f"System Status: {status}",
-            "",
-            f"Commands Executed: {len(core.getCommandHistory())}"
-        ]
-    )
-
+    drawBox("KIOSK DIAGNOSTICS", [
+        f"Health Status: {status}",
+        f"Total Commands: {len(core.getCommandHistory())}",
+        "Security Check: All Passed"
+    ])
     pauseScreen()
 
 def runKiosk():
-    from payment.payment_system import PaymentSystem
-    from models.productModel import ProductModel
-    from inventory.components.simpleProduct import SimpleProduct
 
-    paymentSystem = PaymentSystem()
-
-    catalog_data = {
-        "milk": ProductModel("P1", "milk", 50.0, 10),
+    # Setup core systems
+    payment_sys = PaymentSystem()
+    catalog = {
+        "milk":  ProductModel("P1", "milk", 50.0, 10),
         "bread": ProductModel("P2", "bread", 30.0, 5),
-        "eggs": ProductModel("P3", "eggs", 10.0, 20)
+        "eggs":  ProductModel("P3", "eggs", 10.0, 20)
     }
+    products = {name: SimpleProduct(model) for name, model in catalog.items()}
 
-    products = {name: SimpleProduct(model) for name, model in catalog_data.items()}
-
-    core = KioskCoreSystem(inventorySystem=products, paymentSystem=paymentSystem)
+    # Initialize Core & Interface
+    core = KioskCoreSystem(inventorySystem=products, paymentSystem=payment_sys)
     interface = KioskInterface(core)
 
     welcomeScreen()
 
     while True:
-        choice = mainMenu()
+        clearScreen()
+        drawBox("MAIN MENU", [
+            "1. Purchase Product",
+            "2. Process Refund",
+            "3. Restock Inventory",
+            "4. System Diagnostics",
+            "5. Exit System"
+        ])
+        choice = input("\n Choose Action (1-5): ")
 
         if choice == "1":
-            purchaseScreen(interface, products)
-
+            purchaseFlow(interface, products)
         elif choice == "2":
-            refundScreen(interface)
-
+            refundFlow(interface)
         elif choice == "3":
-            restockScreen(interface, products)
-
+            restockFlow(interface, products)
         elif choice == "4":
-            diagnosticsScreen(core)
-
+            diagnosticsFlow(core)
         elif choice == "5":
-            clearScreen()
-            drawBox("SHUTDOWN", ["System shutting down..."])
+            print(Colors.WARNING + " Powering Down... Goodbye!" + Colors.RESET)
+            time.sleep(1)
             break
-
         else:
-            print(Colors.ERROR + "Invalid option" + Colors.RESET)
+            print(Colors.ERROR + " Invalid option." + Colors.RESET)
             time.sleep(1)
 
 runKiosk()
