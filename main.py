@@ -1,4 +1,4 @@
-from core.kiosk_core_system import KioskCoreSystem
+from core.kioskCoreSystem import KioskCoreSystem
 from core.kioskInterface import KioskInterface
 from payment.payment_system import PaymentSystem
 from models.productModel import ProductModel

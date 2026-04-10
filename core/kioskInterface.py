@@ -1,6 +1,6 @@
-from core.commands.purchase_command import PurchaseCommand
-from core.commands.refund_command import RefundCommand
-from core.commands.restock_command import RestockCommand
+from core.commands.purchaseCommand import PurchaseCommand
+from core.commands.refundCommand import RefundCommand
+from core.commands.restockCommand import RestockCommand
 
 
 class KioskInterface:
