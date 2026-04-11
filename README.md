@@ -1,4 +1,4 @@
-<img width="1920" height="1200" alt="Screenshot 2026-04-11 174306" src="https://github.com/user-attachments/assets/ac5a6dc5-027a-4076-a39a-69d1a6193c2c" /># Aura Retail OS
+# Aura Retail OS
 
 > **A Smart Automated Retail Kiosk System** built with Python, demonstrating core Object-Oriented Programming principles through a fully simulated retail environment.
 
