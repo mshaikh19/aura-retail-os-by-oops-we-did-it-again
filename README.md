@@ -1,4 +1,4 @@
-# Aura Retail OS
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174306" src="https://github.com/user-attachments/assets/ac5a6dc5-027a-4076-a39a-69d1a6193c2c" /># Aura Retail OS
 
 > **A Smart Automated Retail Kiosk System** built with Python, demonstrating core Object-Oriented Programming principles through a fully simulated retail environment.
 
@@ -136,6 +136,15 @@ python main.py
 ```
 
 > **Note:** ANSI color codes are used for the terminal UI. Run in **Windows Terminal**, **PowerShell**, or any terminal that supports ANSI escape sequences for the best experience.
+
+---
+
+## Working Simulation
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174209" src="https://github.com/user-attachments/assets/9dedc000-9044-45d4-9cc4-7227fbab7260" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174246" src="https://github.com/user-attachments/assets/27f2f199-3d5e-4239-abe9-c7d4934c724e" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174306" src="https://github.com/user-attachments/assets/8a0461de-431f-46b2-a156-7527baf6da89" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174343" src="https://github.com/user-attachments/assets/1fc84fbf-fed2-48ec-9dfd-b10667ad98c0" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174407" src="https://github.com/user-attachments/assets/6fa13391-2e1f-4636-9032-9ce0044b7695" />
 
 ---
 
