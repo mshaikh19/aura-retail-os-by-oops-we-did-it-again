@@ -8,6 +8,7 @@ class KioskCoreSystem:
         self.systemStatus = "ACTIVE"
         self.commandHistory = []
         #keeps track of executed commands
+        
     def executeCommand(self, command):
 
         # 1. Validate command object
