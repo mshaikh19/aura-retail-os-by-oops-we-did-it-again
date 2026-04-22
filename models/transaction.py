@@ -1,0 +1,58 @@
+import uuid
+from datetime import datetime
+
+
+class Transaction:
+    """
+    Represents a single transaction in the system.
+    Stores all details related to a purchase or refund.
+    """
+
+    def __init__(self, product_name, quantity, total_amount, payment_method, status):
+        """
+        Initializes a transaction with all required details.
+        """
+
+        # Unique transaction ID
+        self.transaction_id = str(uuid.uuid4())
+
+        # Product details
+        self.product_name = product_name
+        self.quantity = quantity
+
+        # Pricing details
+        self.total_amount = total_amount
+
+        # Payment method used (UPI / CARD / WALLET)
+        self.payment_method = payment_method
+
+        # Transaction status (SUCCESS / FAILED / REFUNDED)
+        self.status = status
+
+        # Timestamp of transaction
+        self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def toDict(self):
+        """
+        Converts transaction object into dictionary format.
+        Useful for saving data (JSON/CSV).
+        """
+        return {
+            "transaction_id": self.transaction_id,
+            "product_name": self.product_name,
+            "quantity": self.quantity,
+            "total_amount": self.total_amount,
+            "payment_method": self.payment_method,
+            "status": self.status,
+            "timestamp": self.timestamp
+        }
+
+    def __repr__(self):
+        """
+        Returns readable string representation of transaction.
+        Useful for debugging/logging.
+        """
+        return (f"Transaction(id={self.transaction_id}, "
+                f"product={self.product_name}, qty={self.quantity}, "
+                f"amount={self.total_amount}, method={self.payment_method}, "
+                f"status={self.status}, time={self.timestamp})")
