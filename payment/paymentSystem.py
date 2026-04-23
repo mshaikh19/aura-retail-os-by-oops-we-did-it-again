@@ -1,6 +1,7 @@
-from payment.adapters.upi_adapter import UPIAdapter
-from payment.adapters.card_adapter import CardAdapter
-from payment.adapters.wallet_adapter import WalletAdapter
+# Import adapter classes for different payment methods
+from payment.adapters.upiAdapter import UPIAdapter
+from payment.adapters.cardAdapter import CardAdapter
+from payment.adapters.walletAdapter import WalletAdapter
 
 
 class PaymentSystem:
@@ -8,11 +9,13 @@ class PaymentSystem:
     def makePayment(self, method, amount):
         print("\n[PaymentSystem] Starting payment...")
 
+        # Dynamically get the correct payment processor (Adapter)
         processor = self._getProcessor(method)
         if processor is None:
             print("[PaymentSystem] Invalid payment method")
             return False
 
+        # Calls the same method, but different adapters handle it in their own way
         result = processor.processPayment(amount)
 
         print("[PaymentSystem] Payment completed")
@@ -31,6 +34,7 @@ class PaymentSystem:
         print("[PaymentSystem] Refund completed")
         return result
 
+    #Method to select and return the appropriate payment adapter.
     def _getProcessor(self, method):
         if method == "UPI":
             return UPIAdapter()

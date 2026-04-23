@@ -139,6 +139,15 @@ python main.py
 
 ---
 
+## Working Simulation
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174209" src="https://github.com/user-attachments/assets/9dedc000-9044-45d4-9cc4-7227fbab7260" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174246" src="https://github.com/user-attachments/assets/27f2f199-3d5e-4239-abe9-c7d4934c724e" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174306" src="https://github.com/user-attachments/assets/8a0461de-431f-46b2-a156-7527baf6da89" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174343" src="https://github.com/user-attachments/assets/1fc84fbf-fed2-48ec-9dfd-b10667ad98c0" />
+<img width="1920" height="1200" alt="Screenshot 2026-04-11 174407" src="https://github.com/user-attachments/assets/6fa13391-2e1f-4636-9032-9ce0044b7695" />
+
+---
+
 ## Team
 
 > **Course:** IT620 – Object-Oriented Programming  
