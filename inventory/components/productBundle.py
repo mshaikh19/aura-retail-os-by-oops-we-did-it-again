@@ -1,4 +1,4 @@
-from .inventory_component import InventoryComponent
+from .inventoryComponent import InventoryComponent
 
 class ProductBundle(InventoryComponent):
     """
