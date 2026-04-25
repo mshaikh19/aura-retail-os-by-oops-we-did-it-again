@@ -14,6 +14,9 @@ class ProductBundle(InventoryComponent):
     def add(self, item: InventoryComponent):
         self._items.append(item)
 
+    def getItems(self):
+        return self._items
+
     def remove(self, item: InventoryComponent):
         if item in self._items:
             self._items.remove(item)
