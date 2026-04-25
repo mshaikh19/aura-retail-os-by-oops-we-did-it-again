@@ -29,7 +29,12 @@ class PurchaseCommand(Command):
             raise Exception("Payment system unavailable")
 
         # process payment
-        paymentSuccess = core.paymentSystem.makePayment(self.paymentMethod, totalAmount)
+        paymentSuccess = core.paymentSystem.makePayment(
+            self.paymentMethod,
+            totalAmount,
+            self.product.getName(),
+            self.quantity
+)
 
         if not paymentSuccess:
             raise Exception("Payment failed")
