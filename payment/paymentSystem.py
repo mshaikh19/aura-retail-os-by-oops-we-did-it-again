@@ -6,7 +6,7 @@ from payment.adapters.walletAdapter import WalletAdapter
 # Import Transaction model
 from models.transaction import Transaction
 
-# Import Persistent Layer (your file name)
+# Import Persistent Layer
 from persistence.persistenceLayer import PersistentLayer
 
 # Import Monitoring System
@@ -18,6 +18,15 @@ class PaymentSystem:
     def __init__(self):
         # Store all transactions in memory
         self.transactionHistory = []
+
+         # Factory mapping for payment processors
+        self.processors = {
+            "UPI": UPIAdapter,
+            "CARD": CardAdapter,
+            "WALLET": WalletAdapter
+        }
+
+    # ---------------- PAYMENT ---------------- #
 
     def makePayment(self, method, amount, product_name=None, quantity=None, kiosk_type="UNKNOWN"):
         print("\n[PaymentSystem] Starting payment...")
@@ -31,7 +40,6 @@ class PaymentSystem:
         # Process payment using adapter
         result = processor.processPayment(amount)
 
-        # ✅ After successful payment
         if result:
             transaction = Transaction(
                 product_name=product_name if product_name else "UNKNOWN",
@@ -45,10 +53,10 @@ class PaymentSystem:
             # Store in memory
             self.transactionHistory.append(transaction)
 
-            # ✅ Save to JSON (Persistence)
+            # Save to JSON
             PersistentLayer.saveTransaction(transaction.toDict())
 
-            # ✅ Notify Monitoring System (Observer Pattern)
+            # Notify monitoring system
             MonitoringSystem.notify(
                 "PAYMENT",
                 "TRANSACTION_COMPLETE",
@@ -60,8 +68,23 @@ class PaymentSystem:
         print("[PaymentSystem] Payment completed")
         return result
 
-    def refund(self, method, amount):
+    # ---------------- REFUND ---------------- #
+
+    def refund(self, method):
         print("\n[PaymentSystem] Starting refund...")
+
+        # No transactions
+        if not self.transactionHistory:
+            print("[PaymentSystem] No transactions available for refund")
+            return False
+
+        # Get last transaction
+        last_transaction = self.transactionHistory[-1]
+
+        # Prevent double refund
+        if last_transaction.status == "REFUNDED":
+            print("[PaymentSystem] Last transaction already refunded")
+            return False
 
         processor = self._getProcessor(method)
 
@@ -69,21 +92,38 @@ class PaymentSystem:
             print("[PaymentSystem] Invalid payment method")
             return False
 
+        amount = last_transaction.total_amount
+
+        print(f"[PaymentSystem] Refunding Rs.{amount} for {last_transaction.product_name}")
+
         result = processor.refundPayment(amount)
 
-        # (Optional: you can later log refund transactions)
+        if result:
+            # Update transaction status
+            last_transaction.status = "REFUNDED"
+
+            # Save updated transaction
+            PersistentLayer.saveTransaction(last_transaction.toDict())
+
+            # Notify monitoring system
+            MonitoringSystem.notify(
+                "PAYMENT",
+                "REFUND_COMPLETE",
+                f"Rs.{amount} refunded via {method}"
+            )
+
+            print("[PaymentSystem] Refund successful")
+
         print("[PaymentSystem] Refund completed")
         return result
 
+    # ---------------- HELPER ---------------- #
+
     def _getProcessor(self, method):
-        if method == "UPI":
-            return UPIAdapter()
-        elif method == "CARD":
-            return CardAdapter()
-        elif method == "WALLET":
-            return WalletAdapter()
-        else:
-            return None
+        processor_class = self.processors.get(method)
+        return processor_class() if processor_class else None
+
+    # ---------------- HISTORY ---------------- #
 
     def getTransactionHistory(self):
         return self.transactionHistory

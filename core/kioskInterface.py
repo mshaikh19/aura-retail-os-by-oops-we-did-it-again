@@ -39,22 +39,19 @@ class KioskInterface:
     """
         Create a refund transaction function to simulate the refund of transaction 
     """
-    def refundTransaction(self, amount, paymentMethod):
+    def refundTransaction(self, paymentMethod):
         """
             Safety Check :
                 If amount is less than or equal to 0, return
         """
-        if amount <= 0:
-            print("Invalid input for refund")
-            return
         
-        print(f"[INTERFACE] Refund request: \u20b9{amount}")
+        print("[INTERFACE] Refund request for last transaction")
 
         """
             Create a command object to pass to the core system for refunding transaction
         """
 
-        command = RefundCommand(amount, paymentMethod)
+        command = RefundCommand(paymentMethod)
         self.core.executeCommand(command)
 
     """
