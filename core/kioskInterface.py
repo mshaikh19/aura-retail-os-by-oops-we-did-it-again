@@ -39,19 +39,22 @@ class KioskInterface:
     """
         Create a refund transaction function to simulate the refund of transaction 
     """
-    def refundTransaction(self, paymentMethod):
+    def refundTransaction(self, amount, paymentMethod):
         """
             Safety Check :
                 If amount is less than or equal to 0, return
         """
+        if amount <= 0:
+            print("Invalid input for refund")
+            return
         
-        print("[INTERFACE] Refund request for last transaction")
+        print(f"[INTERFACE] Refund request: \u20b9{amount}")
 
         """
             Create a command object to pass to the core system for refunding transaction
         """
 
-        command = RefundCommand(paymentMethod)
+        command = RefundCommand(amount, paymentMethod)
         self.core.executeCommand(command)
 
     """
@@ -85,33 +88,35 @@ class KioskInterface:
         """
         data = self.core.getOperationalStatus()
         
-        # Prepare lines for drawBox
-        core_info = data["CORE"]
-        hw_info = data["HARDWARE"]
-        ext_info = data["EXTENSIONS"]
+        print("\n" + Colors.BLUE + " ╔" + "═"*58 + "╗" + Colors.RESET)
+        print(f" {Colors.BLUE}║{Colors.RESET}           {Colors.BOLD}{Colors.CYAN}❖ SYSTEM DIAGNOSTICS ENGINE{Colors.RESET}            {Colors.BLUE}║{Colors.RESET}")
+        print(Colors.BLUE + " ╠" + "═"*58 + "╣" + Colors.RESET)
         
-        status_color = Colors.SUCCESS if core_info["System Status"] == "ACTIVE" else Colors.ERROR
+        # 1. Render Core Section
+        core = data["CORE"]
+        status_color = Colors.SUCCESS if core["System Status"] == "ACTIVE" else Colors.ERROR
+        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}CORE STATUS:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Status:      {status_color}{core['System Status']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Application: {Colors.TEXT}{core['Kiosk Type']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > History:     {Colors.DIM}{core['Command Logs']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
-        lines = [
-            f"{Colors.BOLD}CORE STATUS:{Colors.RESET}",
-            f" > Status:      {status_color}{core_info['System Status']}{Colors.RESET}",
-            f" > Application: {Colors.TEXT}{core_info['Kiosk Type']}{Colors.RESET}",
-            f" > History:     {Colors.DIM}{core_info['Command Logs']}{Colors.RESET}",
-            "",
-            f"{Colors.BOLD}HARDWARE ENGINE:{Colors.RESET}",
-            f" > Dispenser:   {Colors.HEADER}{hw_info['Dispenser']}{Colors.RESET}",
-            f" > Motor Unit:  {Colors.DIM}{hw_info['Motor Module']}{Colors.RESET}"
-        ]
+        print(Colors.BLUE + " ╟" + "─"*58 + "╢" + Colors.RESET)
         
-        if ext_info:
-            lines.append("")
-            lines.append(f"{Colors.BOLD}ACTIVE EXTENSIONS:{Colors.RESET}")
-            for key, val in ext_info.items():
-                lines.append(f" + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}")
+        # 2. Render Hardware Section
+        hw = data["HARDWARE"]
+        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}HARDWARE ENGINE:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Dispenser:   {Colors.HEADER}{hw['Dispenser']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Motor Unit:  {Colors.DIM}{hw['Motor Module']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
-        from main import drawBox # Import helper
-        drawBox("❖ SYSTEM DIAGNOSTICS ENGINE", lines, color=Colors.CYAN)
+        # 3. Render Extensions Section (if any)
+        ext = data["EXTENSIONS"]
+        if ext:
+            print(Colors.BLUE + " ╟" + "─"*58 + "╢" + Colors.RESET)
+            print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}ACTIVE EXTENSIONS:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+            for key, val in ext.items():
+                print(f" {Colors.BLUE}║{Colors.RESET}   + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
+        print(Colors.BLUE + " ╚" + "═"*58 + "╝" + Colors.RESET)
         return True
         
         # Fetch alerts from Monitoring System

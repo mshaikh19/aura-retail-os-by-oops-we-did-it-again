@@ -19,7 +19,6 @@ from hardware.dispensers.spiralDispenser import SpiralDispenser
 
 from monitoring.monitoring_system import MonitoringSystem
 from persistence.persistenceLayer import PersistentLayer
-from core.security.technicalSecurityProxy import TechnicalSecurityProxy
 
 # Import Modules
 from admin.admin_terminal import adminFlow
@@ -81,14 +80,25 @@ def showProgress(message, duration=1.2):
     """ Success message after check """
     print(f"\r {Colors.SUCCESS}[OK] {message} Done!{Colors.RESET}")
 
-def drawBox(title, lines, color=Colors.BLUE):
-    width = 62
-    print(color + " ╔" + "═"*(width-2) + "╗")
-    print(f" ║{Colors.BOLD}{pad_ansi(title, 60, 'center')}{Colors.RESET}{color}║")
-    print(" ╠" + "═"*(width-2) + "╣")
-    for line in lines:
-        print(f" ║ {pad_ansi(line, 58, 'left')} ║")
-    print(" ╚" + "═"*(width-2) + "╝" + Colors.RESET)
+def drawBox(title, lines):    
+    width = 60
+
+    try:
+        # Try printing with premium box characters
+        print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
+        print("║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print("╠" + "═"*(width-2) + "╣")
+        for line in lines:
+            print("║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
+    except UnicodeEncodeError:
+        # Fallback for older terminals
+        print(Colors.BLUE + "+" + "-"*(width-2) + "+")
+        print("| " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print("+" + "-"*(width-2) + "+")
+        for line in lines:
+            print("| " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print("+" + "-"*(width-2) + "+" + Colors.RESET)
 
 """ Display the inventory from products """
 def strip_ansi(text):
@@ -278,7 +288,7 @@ def purchaseFlow(interface, products):
 def refundFlow(interface):
     clearScreen()
     try:
-        print("Refunding last transaction...")
+        amount = float(input(" Enter amount to refund: Rs."))
     except ValueError:
         print(Colors.ERROR + " Please enter a valid number." + Colors.RESET)
         pauseScreen()
@@ -286,7 +296,7 @@ def refundFlow(interface):
 
     method = paymentChoice()
     showProgress("Contacting Bank for Refund")
-    interface.refundTransaction(method)
+    interface.refundTransaction(amount, method)
     print(Colors.SUCCESS + " [DONE] Amount has been reversed." + Colors.RESET)
     pauseScreen()
 
@@ -586,8 +596,7 @@ def runKiosk():
                 print(f" {Colors.ERROR} Access Denied.{Colors.RESET}")
                 time.sleep(1)
         elif choice == "5":
-            security = TechnicalSecurityProxy(hardwareSimulationMenu)
-            security.authenticate_and_run(core)
+            hardwareSimulationMenu(core)
         elif choice == "6":
             clearScreen()
             drawBox("SHUTDOWN SEQUENCE", [
