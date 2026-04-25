@@ -19,7 +19,7 @@ class PaymentSystem:
         # Store all transactions in memory
         self.transactionHistory = []
 
-    def makePayment(self, method, amount, product_name=None, quantity=None):
+    def makePayment(self, method, amount, product_name=None, quantity=None, kiosk_type="UNKNOWN"):
         print("\n[PaymentSystem] Starting payment...")
 
         processor = self._getProcessor(method)
@@ -38,7 +38,8 @@ class PaymentSystem:
                 quantity=quantity if quantity else 0,
                 total_amount=amount,
                 payment_method=method,
-                status="SUCCESS"
+                status="SUCCESS",
+                kiosk_type=kiosk_type
             )
 
             # Store in memory

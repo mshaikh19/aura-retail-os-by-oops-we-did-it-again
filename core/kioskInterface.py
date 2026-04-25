@@ -1,6 +1,7 @@
 from core.commands.purchaseCommand import PurchaseCommand
 from core.commands.refundCommand import RefundCommand
 from core.commands.restockCommand import RestockCommand
+from utils.colors import Colors
 
 
 class KioskInterface:
@@ -81,19 +82,40 @@ class KioskInterface:
     """
     
     def runDiagnostics(self):
-        print("[INTERFACE] Running diagnostics...")
+        """
+        FACADE PATTERN
+        Unified interface for checking all subsystem health.
+        """
+        data = self.core.getOperationalStatus()
         
-        # Display operational status of the kiosk
-        operational_status = getattr(self.core, 'getOperationalStatus', lambda: self.core.getSystemStatus())()
-        print(f"Operational Status: {operational_status}")
+        # Prepare lines for drawBox
+        core_info = data["CORE"]
+        hw_info = data["HARDWARE"]
+        ext_info = data["EXTENSIONS"]
         
-        # Display hardware modules status of the kiosk if any
-        if hasattr(self.core, 'getModuleStatuses'):
-            modules_status = self.core.getModuleStatuses()
-            if modules_status:
-                print("Attached Modules Status:")
-                for module_name, status in modules_status.items():
-                    print(f"  - {module_name}: {status}")
+        status_color = Colors.SUCCESS if core_info["System Status"] == "ACTIVE" else Colors.ERROR
+        
+        lines = [
+            f"{Colors.BOLD}CORE STATUS:{Colors.RESET}",
+            f" > Status:      {status_color}{core_info['System Status']}{Colors.RESET}",
+            f" > Application: {Colors.TEXT}{core_info['Kiosk Type']}{Colors.RESET}",
+            f" > History:     {Colors.DIM}{core_info['Command Logs']}{Colors.RESET}",
+            "",
+            f"{Colors.BOLD}HARDWARE ENGINE:{Colors.RESET}",
+            f" > Dispenser:   {Colors.HEADER}{hw_info['Dispenser']}{Colors.RESET}",
+            f" > Motor Unit:  {Colors.DIM}{hw_info['Motor Module']}{Colors.RESET}"
+        ]
+        
+        if ext_info:
+            lines.append("")
+            lines.append(f"{Colors.BOLD}ACTIVE EXTENSIONS:{Colors.RESET}")
+            for key, val in ext_info.items():
+                lines.append(f" + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}")
+        
+        from main import drawBox # Import helper
+        drawBox("❖ SYSTEM DIAGNOSTICS ENGINE", lines, color=Colors.CYAN)
+        
+        return True
         
         # Fetch alerts from Monitoring System
         try:

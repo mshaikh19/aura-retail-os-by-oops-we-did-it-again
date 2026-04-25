@@ -75,18 +75,18 @@ class PersistentLayer:
     # ---------------- INVENTORY ---------------- #
 
     @staticmethod
-    def saveInventoryState(items_dict):
+    def saveInventoryState(items_dict, filename="inventory.json"):
         """
         Save inventory state
         """
-        PersistentLayer.save("inventory.json", items_dict)
+        PersistentLayer.save(filename, items_dict)
 
     @staticmethod
-    def loadInventoryState():
+    def loadInventoryState(filename="inventory.json"):
         """
         Load inventory state
         """
-        return PersistentLayer.load("inventory.json")
+        return PersistentLayer.load(filename)
 
     # ---------------- CONFIG ---------------- #
 

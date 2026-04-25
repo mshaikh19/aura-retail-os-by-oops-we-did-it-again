@@ -18,11 +18,19 @@ class RestockCommand(Command):
             raise Exception("Invalid quantity")
 
         print(f"[Restock] Adding {self.quantity} units of {self.product.getName()}")
+        
+        # update stock using core inventory system (to trigger Proxy/Persistence)
+        if core.inventorySystem:
+            product_key = core.inventorySystem.findKeyForProduct(self.product)
+            if product_key:
+                core.inventorySystem.addStock(product_key, self.quantity)
+                print(f"[Restock] New stock in system: {self.product.getAvailableStock()}")
+            else:
+                self.product.addStock(self.quantity)
+        else:
+            # fallback to direct update
+            self.product.addStock(self.quantity)
 
-        # update stock using product method (encapsulation)
-        self.product.addStock(self.quantity)
-
-        print(f"[Restock] New stock: {self.product.getStock()}")
         print("[Restock] Restock completed successfully.")
 
         self.log()  # log execution

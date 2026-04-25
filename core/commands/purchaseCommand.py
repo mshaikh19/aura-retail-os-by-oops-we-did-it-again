@@ -33,8 +33,9 @@ class PurchaseCommand(Command):
             self.paymentMethod,
             totalAmount,
             self.product.getName(),
-            self.quantity
-)
+            self.quantity,
+            kiosk_type=core.kioskType
+        )
 
         if not paymentSuccess:
             raise Exception("Payment failed")
@@ -54,7 +55,14 @@ class PurchaseCommand(Command):
         # update inventory AFTER successful payment + dispense
         # PASS THROUGH PROXY (Step 4: Observer Trigger)
         if core.inventorySystem:
-            core.inventorySystem.reduceStock(self.product.getName().lower(), self.quantity)
+            # Dynamically find the key in the inventory that matches this product
+            # This ensures persistence and monitoring are triggered correctly
+            product_key = core.inventorySystem.findKeyForProduct(self.product)
+            if product_key:
+                core.inventorySystem.reduceStock(product_key, self.quantity)
+            else:
+                # Fallback to direct reduction if not in manager (unlikely)
+                self.product.reduceStock(self.quantity)
         else:
             self.product.reduceStock(self.quantity)
 

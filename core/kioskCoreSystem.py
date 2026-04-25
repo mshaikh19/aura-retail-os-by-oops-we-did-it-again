@@ -1,14 +1,49 @@
 class KioskCoreSystem:
-    def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None):
+    def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
         #creating subsystems 
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
 
+        self.kioskType = kioskType
         self.systemStatus = "ACTIVE"
         self.commandHistory = []
         #keeps track of executed commands
         
+        # Decorator management (Hardware Modules)
+        self.top_module = None 
+
+    def attachModule(self, module):
+        """ Attaches a HardwareModule (Decorator) to the system """
+        self.top_module = module
+        print(f"[CORE] Module attached: {type(module).__name__}")
+        self.top_module.activate()
+
+    def getModuleStatuses(self):
+        """ Returns status of all attached decorators """
+        if self.top_module:
+            return self.top_module.getStatus()
+        return {}
+
+    def getOperationalStatus(self):
+        """ Comprehensive system health report structured for UI rendering """
+        hw_data = self.hardwareSystem.getStatus() if self.hardwareSystem else {}
+        
+        # Structure the data into logical groups
+        report = {
+            "CORE": {
+                "System Status": self.systemStatus,
+                "Kiosk Type": self.kioskType,
+                "Command Logs": f"{len(self.commandHistory)} executed"
+            },
+            "HARDWARE": {
+                "Dispenser": hw_data.get("dispenser", "OFFLINE"),
+                "Motor Module": "RUNNING" if hw_data.get("motorRunning") else "IDLE"
+            },
+            "EXTENSIONS": self.getModuleStatuses()
+        }
+        return report
+
     def executeCommand(self, command):
 
         # 1. Validate command object

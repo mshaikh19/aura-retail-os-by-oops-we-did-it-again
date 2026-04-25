@@ -14,6 +14,13 @@ class InventorySystem:
     def getProduct(self, name: str) -> InventoryComponent:
         return self._items.get(name)
 
+    def findKeyForProduct(self, product: InventoryComponent) -> str:
+        """ Reverse lookup: find the key for a given product object """
+        for key, item in self._items.items():
+            if item == product:
+                return key
+        return None
+
     def getAvailableStock(self, name: str) -> int:
         item = self.getProduct(name)
         if item:

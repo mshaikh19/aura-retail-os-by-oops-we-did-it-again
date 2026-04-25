@@ -8,7 +8,7 @@ class Transaction:
     Stores all details related to a purchase or refund.
     """
 
-    def __init__(self, product_name, quantity, total_amount, payment_method, status):
+    def __init__(self, product_name, quantity, total_amount, payment_method, status, kiosk_type="UNKNOWN"):
         """
         Initializes a transaction with all required details.
         """
@@ -29,6 +29,9 @@ class Transaction:
         # Transaction status (SUCCESS / FAILED / REFUNDED)
         self.status = status
 
+        # Kiosk Application Type
+        self.kiosk_type = kiosk_type
+
         # Timestamp of transaction
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -44,6 +47,7 @@ class Transaction:
             "total_amount": self.total_amount,
             "payment_method": self.payment_method,
             "status": self.status,
+            "kiosk_type": self.kiosk_type,
             "timestamp": self.timestamp
         }
 
