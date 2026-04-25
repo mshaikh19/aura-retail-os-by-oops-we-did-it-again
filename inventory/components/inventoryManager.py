@@ -1,24 +1,48 @@
-def show_product(self, product_id):
-    product = self.get_product(product_id)
+from .inventoryComponent import InventoryComponent
 
-    if product is None:
-        print(f"Product with ID {product_id} not found")
-        return
+class InventorySystem:
+    """
+    Proxy Pattern - Real Subject
+    Manages the core inventory logic independently, holding a dictionary of InventoryComponents.
+    """
+    def __init__(self):
+        self._items = {}
 
-    print("----- Product Details -----")
-    print(f"ID: {product.model.product_id}")
-    print(f"Name: {product.model.name}")
-    print(f"Price: {product.get_price()}")
-    print(f"Stock: {product.get_stock()}")
-    print("----------------------------")
+    def addProduct(self, name: str, item: InventoryComponent):
+        self._items[name] = item
 
+    def getProduct(self, name: str) -> InventoryComponent:
+        return self._items.get(name)
 
-def show_all_products(self):
-    if not self.products:
-        print("Inventory is empty")
-        return
+    def getAvailableStock(self, name: str) -> int:
+        item = self.getProduct(name)
+        if item:
+            return item.getAvailableStock()
+        return 0
 
-    print("===== Inventory =====")
-    for product in self.products.values():
-        print(f"{product.model.product_id} | {product.model.name} | Stock: {product.get_stock()}")
-    print("=====================")
+    def reduceStock(self, name: str, qty: int):
+        item = self.getProduct(name)
+        if not item:
+            raise Exception(f"Product {name} not found in inventory.")
+        item.reduceStock(qty)
+
+    def addStock(self, name: str, qty: int):
+        item = self.getProduct(name)
+        if not item:
+            raise Exception(f"Product {name} not found in inventory.")
+        
+        # We need to be able to call addStock, but only SimpleProduct typically has it.
+        if hasattr(item, 'addStock'):
+            item.addStock(qty)
+        else:
+            raise Exception(f"Cannot directly add stock to composite grouping {name}.")
+
+    def showAll(self):
+        if not self._items:
+            print("Inventory is empty.")
+            return
+        
+        print("===== Inventory =====")
+        for item in self._items.values():
+            item.display()
+        print("=====================")
