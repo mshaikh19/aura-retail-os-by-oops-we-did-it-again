@@ -47,7 +47,11 @@ class PurchaseCommand(Command):
                 raise Exception("Dispense failed — transaction cancelled")
 
         # update inventory AFTER successful payment + dispense
-        self.product.reduceStock(self.quantity)
+        # PASS THROUGH PROXY (Step 4: Observer Trigger)
+        if core.inventorySystem:
+            core.inventorySystem.reduceStock(self.product.getName().lower(), self.quantity)
+        else:
+            self.product.reduceStock(self.quantity)
 
         print("[Purchase] Purchase completed successfully.")
 

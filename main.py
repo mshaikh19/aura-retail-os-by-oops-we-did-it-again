@@ -14,7 +14,10 @@ from inventory.components.inventoryManager import InventorySystem
 from inventory.security.inventoryProxy import SecureInventoryProxy
 from registry.central_registry import CentralRegistry
 
+from hardware.interfaces.hardwareAbstraction import HardwareAbstraction
+from hardware.dispensers.spiralDispenser import SpiralDispenser
 
+from monitoring.monitoring_system import MonitoringSystem
 import os
 import time
 
@@ -197,8 +200,6 @@ def displayInventory(products):
             idx += 1
         
         print(Colors.BLUE + bottom + Colors.RESET)
-        
-    
 
     except UnicodeEncodeError:
         # Fallback
@@ -222,6 +223,8 @@ def welcomeScreen():
     print()
     showProgress("Checking System Modules")
     showProgress("Syncing Inventory DB")
+    showProgress("Checking Hardware (SpiralDispenser)")
+    showProgress("Activating Monitoring System (Observer)")
     showProgress("Opening Secure Gateway")
     
     time.sleep(0.5)
@@ -323,24 +326,63 @@ def restockFlow(interface, products):
 
 def diagnosticsFlow(core):
     clearScreen()
+    print(f"\n {Colors.CYAN}{Colors.BOLD}❖ SYSTEM DIAGNOSTICS ENGINE{Colors.RESET}")
+    print(f" {Colors.DIM}─" + "─"*50 + Colors.RESET)
+    
+    # Core Status
     status = core.getSystemStatus()
-    drawBox("KIOSK DIAGNOSTICS", [
-        f"Health Status: {status}",
-        f"Total Commands: {len(core.getCommandHistory())}",
-        "Security Check: All Passed"
+    status_color = Colors.SUCCESS if status == "ACTIVE" else Colors.ERROR
+    
+    # Hardware Status (Step 3: Bridge)
+    hw_info = core.hardwareSystem.getStatus() if core.hardwareSystem else {"dispenser": "NONE", "motorRunning": False}
+    motor_status = f"{Colors.SUCCESS}ONLINE{Colors.RESET}" if hw_info['motorRunning'] else f"{Colors.DIM}IDLE{Colors.RESET}"
+    
+    drawBox("DIAGNOSTIC REPORT", [
+        f" System Status:  {status_color}{status}{Colors.RESET}",
+        f" Hardware ID:    {Colors.HEADER}HW-BRG-2024{Colors.RESET}",
+        f" Dispenser:      {Colors.CYAN}{hw_info['dispenser']}{Colors.RESET}",
+        f" Motor Module:   {motor_status}",
+        f" Comm History:   {len(core.getCommandHistory())} executed",
+        f" System Alerts:  {len(MonitoringSystem.getAlerts())} recorded",
     ])
+    
+    # Show recent alerts in diagnostics
+    alerts = MonitoringSystem.getAlerts()
+    if alerts:
+        print(f"\n {Colors.WARNING}RECENT SYSTEM ALERTS:{Colors.RESET}")
+        for alert in alerts[-3:]: # Show last 3
+            print(f" {Colors.DIM}>> {alert}{Colors.RESET}")
+    
     pauseScreen()
 
 def runKiosk():
-    # 1. Setup Singleton Registry
+    # --- SUB-SYSTEM INITIALIZATION ---
+    # Step 1: Singleton Registry
     registry = CentralRegistry()
-    registry.setConfig("KIOSK_ID", "AURA-001")
-    registry.setConfig("LOCATION", "Main Hall - Floor 1")
+    kiosk_id = registry.getConfig("kiosk_id")
+    location = registry.getConfig("location")
 
-    # 2. Setup Inventory System (Real Subject)
+    # Step 2: Inventory Proxy
     inventory_real = InventorySystem()
     
-    # Load individual products
+    # Step 4: Monitoring (Observer Pattern)
+    monitor = MonitoringSystem()
+    # Subscribe a simple handler that prints alerts in red
+    monitor.subscribe("LOW_STOCK", lambda src, det: print(f"{Colors.ERROR}\n [ALERT] {det} (Triggered by {src}){Colors.RESET}"))
+    
+    interface = SecureInventoryProxy(inventory_real, monitor=monitor)
+
+    # Step 3: Hardware Bridge
+    dispenser = SpiralDispenser()
+    hardware = HardwareAbstraction(dispenser)
+
+    # Core System Assembly
+    payment = PaymentSystem()
+    core = KioskCoreSystem(
+        inventorySystem=interface,
+        paymentSystem=payment,
+        hardwareSystem=hardware
+    )
     inventory_real.addProduct("milk",  SimpleProduct(ProductModel("P1", "milk", 50.0, 10)))
     inventory_real.addProduct("bread", SimpleProduct(ProductModel("P2", "bread", 30.0, 5)))
     inventory_real.addProduct("eggs",  SimpleProduct(ProductModel("P3", "eggs", 10.0, 20)))
@@ -355,14 +397,9 @@ def runKiosk():
     # Add the bundle itself to the inventory
     inventory_real.addProduct("breakfast combo", breakfast_pack)
 
-    # 3. Wrap in Security Proxy (Proxy Pattern)
-    inventory_proxy = SecureInventoryProxy(inventory_real, role="STAFF")
-
-    # 4. Setup Payment and Core
-    payment_sys = PaymentSystem()
-    core = KioskCoreSystem(inventorySystem=inventory_proxy, paymentSystem=payment_sys)
-    
     # Register this kiosk instance globally
+    registry.setConfig("kiosk_id", "AURA-001")
+    registry.setConfig("location", "Main Hall - Floor 1")
     registry.registerKiosk("AURA-001", core)
 
     # 5. Initialize Interface (Facade)
