@@ -3,6 +3,9 @@ from core.kioskInterface import KioskInterface
 from payment.paymentSystem import PaymentSystem
 from models.productModel import ProductModel
 from inventory.components.simpleProduct import SimpleProduct
+from inventory.components.inventoryManager import InventorySystem
+from inventory.security.inventoryProxy import SecureInventoryProxy
+from registry.central_registry import CentralRegistry
 
 
 import os
@@ -31,7 +34,7 @@ def pauseScreen():
 
 def showProgress(message, duration=1.2):
     """ List of characters that create the 'spinning' effect """
-    spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    spinner = ["|", "/", "-", "\\"]
     
     end_time = time.time() + duration
     idx = 0
@@ -43,40 +46,52 @@ def showProgress(message, duration=1.2):
         idx += 1
     
     """ Success message after check """
-    print(f"\r {Colors.SUCCESS}✓ {message} Done!{Colors.RESET}")
+    print(f"\r {Colors.SUCCESS}[OK] {message} Done!{Colors.RESET}")
 
 def drawBox(title, lines):    
     width = 60
 
-    # Top border
-    print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
-    
-    # Title row
-    print("║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
-    
-    # Middle separator
-    print("╠" + "═"*(width-2) + "╣")
-    
-    # Content rows
-    for line in lines:
-        print("║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
-    
-    # Bottom border
-    print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
+    try:
+        # Try printing with premium box characters
+        print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
+        print("║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print("╠" + "═"*(width-2) + "╣")
+        for line in lines:
+            print("║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
+    except UnicodeEncodeError:
+        # Fallback for older terminals
+        print(Colors.BLUE + "+" + "-"*(width-2) + "+")
+        print("| " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print("+" + "-"*(width-2) + "+")
+        for line in lines:
+            print("| " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print("+" + "-"*(width-2) + "+" + Colors.RESET)
 
 """ Display the inventory from products """
 def displayInventory(products):
-
-    print(Colors.BLUE + " ┌──────────────────┬────────────┬──────────────┐")
-    print(f" │ {Colors.HEADER}PRODUCT{Colors.RESET}{Colors.BLUE:10}     │ {Colors.HEADER}PRICE{Colors.RESET}{Colors.BLUE:7}    │ {Colors.HEADER}STOCK{Colors.RESET}{Colors.BLUE:9}    │")
-    print(" ├──────────────────┼────────────┼──────────────┤")
-    
-    for name, prod in products.items():
-        price = f"Rs.{prod.getPrice():.2f}"
-        stock = f"{prod.getStock()} units"
-        print(Colors.BLUE + f" │ {Colors.TEXT}{name.title():<16} {Colors.BLUE}│ {Colors.TEXT}{price:<10} {Colors.BLUE}│ {Colors.TEXT}{stock:<12} {Colors.BLUE}│")
-    
-    print(" └──────────────────┴────────────┴──────────────┘" + Colors.RESET)
+    try:
+        print(Colors.BLUE + " ┌──────────────────┬────────────┬──────────────┐")
+        print(f" │ {Colors.HEADER}PRODUCT{Colors.RESET}{Colors.BLUE:10}     │ {Colors.HEADER}PRICE{Colors.RESET}{Colors.BLUE:7}    │ {Colors.HEADER}STOCK{Colors.RESET}{Colors.BLUE:9}    │")
+        print(" ├──────────────────┼────────────┼──────────────┤")
+        
+        for name, prod in products.items():
+            price = f"Rs.{prod.getPrice():.2f}"
+            stock = f"{prod.getAvailableStock()} units"
+            print(Colors.BLUE + f" │ {Colors.TEXT}{name.title():<16} {Colors.BLUE}│ {Colors.TEXT}{price:<10} {Colors.BLUE}│ {Colors.TEXT}{stock:<12} {Colors.BLUE}│")
+        
+        print(" └──────────────────┴────────────┴──────────────┘" + Colors.RESET)
+    except UnicodeEncodeError:
+        print(Colors.BLUE + " +------------------+------------+--------------+")
+        print(f" | {Colors.HEADER}PRODUCT{Colors.RESET}{Colors.BLUE:10}     | {Colors.HEADER}PRICE{Colors.RESET}{Colors.BLUE:7}    | {Colors.HEADER}STOCK{Colors.RESET}{Colors.BLUE:9}    |")
+        print(" +------------------+------------+--------------+")
+        
+        for name, prod in products.items():
+            price = f"Rs.{prod.getPrice():.2f}"
+            stock = f"{prod.getAvailableStock()} units"
+            print(Colors.BLUE + f" | {Colors.TEXT}{name.title():<16} {Colors.BLUE}| {Colors.TEXT}{price:<10} {Colors.BLUE}| {Colors.TEXT}{stock:<12} {Colors.BLUE}|")
+        
+        print(" +------------------+------------+--------------+" + Colors.RESET)
 
 """ Show the user welcome screen """
 def welcomeScreen():
@@ -197,25 +212,41 @@ def diagnosticsFlow(core):
     pauseScreen()
 
 def runKiosk():
+    # 1. Setup Singleton Registry
+    registry = CentralRegistry()
+    registry.setConfig("KIOSK_ID", "AURA-001")
+    registry.setConfig("LOCATION", "Main Hall - Floor 1")
 
-    # Setup core systems
+    # 2. Setup Inventory System (Real Subject)
+    inventory_real = InventorySystem()
+    
+    # Load products into inventory manager
+    inventory_real.addProduct("milk",  SimpleProduct(ProductModel("P1", "milk", 50.0, 10)))
+    inventory_real.addProduct("bread", SimpleProduct(ProductModel("P2", "bread", 30.0, 5)))
+    inventory_real.addProduct("eggs",  SimpleProduct(ProductModel("P3", "eggs", 10.0, 20)))
+
+    # 3. Wrap in Security Proxy (Proxy Pattern)
+    inventory_proxy = SecureInventoryProxy(inventory_real, role="STAFF")
+
+    # 4. Setup Payment and Core
     payment_sys = PaymentSystem()
-    catalog = {
-        "milk":  ProductModel("P1", "milk", 50.0, 10),
-        "bread": ProductModel("P2", "bread", 30.0, 5),
-        "eggs":  ProductModel("P3", "eggs", 10.0, 20)
-    }
-    products = {name: SimpleProduct(model) for name, model in catalog.items()}
+    core = KioskCoreSystem(inventorySystem=inventory_proxy, paymentSystem=payment_sys)
+    
+    # Register this kiosk instance globally
+    registry.registerKiosk("AURA-001", core)
 
-    # Initialize Core & Interface
-    core = KioskCoreSystem(inventorySystem=products, paymentSystem=payment_sys)
+    # 5. Initialize Interface (Facade)
     interface = KioskInterface(core)
 
     welcomeScreen()
 
+    # Create a mapping for legacy UI compatibility if needed, 
+    # but we'll use the proxy's internal items for display
+    inventory_items = inventory_real._items 
+
     while True:
         clearScreen()
-        drawBox("MAIN MENU", [
+        drawBox(f"AURA RETAIL - {registry.getConfig('LOCATION')}", [
             "1. Purchase Product",
             "2. Process Refund",
             "3. Restock Inventory",
@@ -225,11 +256,11 @@ def runKiosk():
         choice = input("\n Choose Action (1-5): ")
 
         if choice == "1":
-            purchaseFlow(interface, products)
+            purchaseFlow(interface, inventory_items)
         elif choice == "2":
             refundFlow(interface)
         elif choice == "3":
-            restockFlow(interface, products)
+            restockFlow(interface, inventory_items)
         elif choice == "4":
             diagnosticsFlow(core)
         elif choice == "5":
