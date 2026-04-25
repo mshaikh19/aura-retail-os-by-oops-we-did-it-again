@@ -278,7 +278,7 @@ def purchaseFlow(interface, products):
 def refundFlow(interface):
     clearScreen()
     try:
-        amount = float(input(" Enter amount to refund: Rs."))
+        print("Refunding last transaction...")
     except ValueError:
         print(Colors.ERROR + " Please enter a valid number." + Colors.RESET)
         pauseScreen()
@@ -286,7 +286,7 @@ def refundFlow(interface):
 
     method = paymentChoice()
     showProgress("Contacting Bank for Refund")
-    interface.refundTransaction(amount, method)
+    interface.refundTransaction(method)
     print(Colors.SUCCESS + " [DONE] Amount has been reversed." + Colors.RESET)
     pauseScreen()
 
