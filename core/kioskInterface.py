@@ -5,6 +5,8 @@ from core.commands.restockCommand import RestockCommand
 
 class KioskInterface:
     """
+        FACADE PATTERN
+        Single entry point for all external interactions.
         Initialize the interface
     """
     def __init__(self, coreSystem):
@@ -80,4 +82,22 @@ class KioskInterface:
     
     def runDiagnostics(self):
         print("[INTERFACE] Running diagnostics...")
-        print(f"System Status: {self.core.getSystemStatus()}")
+        
+        # Display operational status of the kiosk
+        operational_status = getattr(self.core, 'getOperationalStatus', lambda: self.core.getSystemStatus())()
+        print(f"Operational Status: {operational_status}")
+        
+        # Display hardware modules status of the kiosk if any
+        if hasattr(self.core, 'getModuleStatuses'):
+            modules_status = self.core.getModuleStatuses()
+            if modules_status:
+                print("Attached Modules Status:")
+                for module_name, status in modules_status.items():
+                    print(f"  - {module_name}: {status}")
+        
+        # Fetch alerts from Monitoring System
+        try:
+            from monitoring.monitoring_system import MonitoringSystem
+            MonitoringSystem.showAlerts()
+        except ImportError:
+            pass

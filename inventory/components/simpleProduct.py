@@ -1,15 +1,21 @@
 #This class achieves Abstraction, Encapsulation, and SOC(Separation of Concerns)
 
-from .product import Product
+from .inventoryComponent import InventoryComponent
 from models.productModel import ProductModel
 
-class SimpleProduct(Product):
+class SimpleProduct(InventoryComponent):
 
     def __init__(self, model: ProductModel):
         self.model = model
 
     def getStock(self):
         return self.model.stock
+
+    def getAvailableStock(self):
+        return self.model.stock
+
+    def isAvailable(self):
+        return self.model.stock > 0
 
     def reduceStock(self, qty):
         if qty <= 0:
@@ -31,6 +37,9 @@ class SimpleProduct(Product):
 
     def getName(self):
         return self.model.name
+
+    def display(self, indent=0):
+        print("  " * indent + f"[Product] {self.model.name}  Rs.{self.model.price}  Stock={self.model.stock}")
 
     def __repr__(self):
         return f"SimpleProduct({self.model.name}, Stock={self.model.stock})"
