@@ -3,20 +3,58 @@ from payment.adapters.upiAdapter import UPIAdapter
 from payment.adapters.cardAdapter import CardAdapter
 from payment.adapters.walletAdapter import WalletAdapter
 
+# Import Transaction model
+from models.transaction import Transaction
+
+# Import Persistent Layer (your file name)
+from persistence.persistenceLayer import PersistentLayer
+
+# Import Monitoring System
+from monitoring.monitoring_system import MonitoringSystem
+
 
 class PaymentSystem:
 
-    def makePayment(self, method, amount):
+    def __init__(self):
+        # Store all transactions in memory
+        self.transactionHistory = []
+
+    def makePayment(self, method, amount, product_name=None, quantity=None):
         print("\n[PaymentSystem] Starting payment...")
 
-        # Dynamically get the correct payment processor (Adapter)
         processor = self._getProcessor(method)
+
         if processor is None:
             print("[PaymentSystem] Invalid payment method")
             return False
 
-        # Calls the same method, but different adapters handle it in their own way
+        # Process payment using adapter
         result = processor.processPayment(amount)
+
+        # ✅ After successful payment
+        if result:
+            transaction = Transaction(
+                product_name=product_name if product_name else "UNKNOWN",
+                quantity=quantity if quantity else 0,
+                total_amount=amount,
+                payment_method=method,
+                status="SUCCESS"
+            )
+
+            # Store in memory
+            self.transactionHistory.append(transaction)
+
+            # ✅ Save to JSON (Persistence)
+            PersistentLayer.saveTransaction(transaction.toDict())
+
+            # ✅ Notify Monitoring System (Observer Pattern)
+            MonitoringSystem.notify(
+                "PAYMENT",
+                "TRANSACTION_COMPLETE",
+                f"Rs.{amount} via {method}"
+            )
+
+            print("[PaymentSystem] Transaction recorded successfully.")
 
         print("[PaymentSystem] Payment completed")
         return result
@@ -25,16 +63,17 @@ class PaymentSystem:
         print("\n[PaymentSystem] Starting refund...")
 
         processor = self._getProcessor(method)
+
         if processor is None:
             print("[PaymentSystem] Invalid payment method")
             return False
 
         result = processor.refundPayment(amount)
 
+        # (Optional: you can later log refund transactions)
         print("[PaymentSystem] Refund completed")
         return result
 
-    #Method to select and return the appropriate payment adapter.
     def _getProcessor(self, method):
         if method == "UPI":
             return UPIAdapter()
@@ -44,3 +83,6 @@ class PaymentSystem:
             return WalletAdapter()
         else:
             return None
+
+    def getTransactionHistory(self):
+        return self.transactionHistory
