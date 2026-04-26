@@ -1,3 +1,5 @@
+from utils.colors import Colors
+
 class CentralRegistry:
     """
     Singleton Pattern
@@ -10,6 +12,7 @@ class CentralRegistry:
             cls._instance = super().__new__(cls)
             cls._instance._config = {}
             cls._instance._kiosks = {}
+            print(f" {Colors.HEADER}◈ {Colors.BOLD}REGISTRY:{Colors.RESET} {Colors.TEXT}Singleton instance established.{Colors.RESET}")
         return cls._instance
 
     def registerKiosk(self, kiosk_id, kiosk_ref):

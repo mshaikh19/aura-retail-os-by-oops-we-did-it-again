@@ -1,7 +1,9 @@
-from utils.colors import Colors
 import datetime
+from utils.colors import Colors
 
 class MonitoringSystem:
+    def __init__(self):
+        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}MONITORING:{Colors.RESET} {Colors.TEXT}Sentinel system active.{Colors.RESET}")
     """
     observer Pattern
     The MonitoringSystem acts as the Subject/Publisher.
@@ -17,15 +19,15 @@ class MonitoringSystem:
         if event_type not in cls._subscribers:
             cls._subscribers[event_type] = []
         cls._subscribers[event_type].append(handler)
-        print(f"{Colors.CYAN}[MONITORING]{Colors.RESET} Subscriber added for: {Colors.BOLD}{event_type}{Colors.RESET}")
+        print(f"{Colors.SUCCESS}[MONITORING]{Colors.RESET} Subscriber added for event: {event_type}")
 
     @classmethod
     def notify(cls, source, event_type, detail=""):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        alert_msg = f"{Colors.DIM}[{timestamp}]{Colors.RESET} {Colors.HEADER}[{source}]{Colors.RESET} {Colors.BOLD}{event_type}{Colors.RESET}: {detail}"
+        alert_msg = f"[{timestamp}] [{source}] {event_type}: {detail}"
         
         cls._alerts.append(alert_msg)
-        print(f"{Colors.CYAN}[MONITORING]{Colors.RESET} {alert_msg}")
+        print(f"{Colors.SUCCESS}[MONITORING]{Colors.RESET} {alert_msg}")
 
         # Notify all subscribers listening to this specific event
         if event_type in cls._subscribers:
@@ -33,7 +35,7 @@ class MonitoringSystem:
                 try:
                     handler(source, detail)
                 except Exception as e:
-                    print(f"[MONITORING ERROR] Handler failed for {event_type}: {str(e)}")
+                    print(f"{Colors.ERROR}[MONITORING ERROR]{Colors.RESET} Handler failed for {event_type}: {str(e)}")
 
     @classmethod
     def getAlerts(cls):

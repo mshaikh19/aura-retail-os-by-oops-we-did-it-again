@@ -1,6 +1,5 @@
 from hardware.interfaces.dispenserInterface import DispenserInterface
-from utils.colors import Colors
-import time
+
 
 class SpiralDispenser(DispenserInterface):
     """
@@ -8,8 +7,7 @@ class SpiralDispenser(DispenserInterface):
     """
 
     def dispense(self, product_name, quantity):
-        print(f"{Colors.BLUE}[SPIRAL]{Colors.RESET} Rotating coil → dispensing {Colors.BOLD}{quantity}x {product_name}{Colors.RESET}")
-        time.sleep(0.5)
+        print(f"[SPIRAL] Rotating coil → dispensing {quantity}x {product_name}")
         return True
 
     def calibrate(self):

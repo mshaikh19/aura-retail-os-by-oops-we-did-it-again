@@ -12,6 +12,7 @@ class KioskInterface:
     """
     def __init__(self, coreSystem):
         self.core = coreSystem
+        print(f" {Colors.CYAN}◈ {Colors.BOLD}INTERFACE:{Colors.RESET} {Colors.TEXT}Facade access point ready.{Colors.RESET}")
 
     """
         Create a purchase item function to simulate the purchase of item 
@@ -22,15 +23,13 @@ class KioskInterface:
                 If product is not found or quantity is less than or equal to 0, return
         """
         if not product or quantity <= 0:
-            print("Invalid input for purchase")
+            print(f"{Colors.ERROR}[INTERFACE ERROR]{Colors.RESET} Invalid input for purchase")
             return
 
         """
             Process the request
         """
-        import time
-        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Processing {Colors.BOLD}{quantity}{Colors.RESET} unit request...")
-        time.sleep(0.4)
+        print(f"{Colors.CYAN}[INTERFACE]{Colors.RESET} Purchase request: {quantity} units")
 
         """
             Create a command object to pass to the core system for purchasing product
@@ -38,28 +37,15 @@ class KioskInterface:
         command = PurchaseCommand(product, quantity, paymentMethod)
         self.core.executeCommand(command)
 
-    """
-        Create a refund transaction function to simulate the refund of transaction 
-    """
-    def refundTransaction(self, amount, paymentMethod):
+    def refundTransaction(self, paymentMethod):
         """
-            Safety Check :
-                If amount is less than or equal to 0, return
+        FACADE PATTERN
+        Refunds the last transaction processed by the system.
         """
-        if amount <= 0:
-            print(f"{Colors.ERROR}Invalid input for refund{Colors.RESET}")
-            return
-        
-        import time
-        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Refund request: {Colors.BOLD}Rs.{amount}{Colors.RESET}")
-        time.sleep(0.4)
+        print(f" {Colors.CYAN}[INTERFACE]{Colors.RESET} Refund request initiated via {paymentMethod}...")
 
-        """
-            Create a command object to pass to the core system for refunding transaction
-        """
-
-        command = RefundCommand(amount, paymentMethod)
-        self.core.executeCommand(command)
+        command = RefundCommand(paymentMethod)
+        return self.core.executeCommand(command)
 
     """
         Create a restock inventory function to simulate the restock of inventory 
@@ -70,12 +56,10 @@ class KioskInterface:
                 If product is not found or quantity is less than or equal to 0, return
         """
         if not product or quantity <= 0:
-            print(f"{Colors.ERROR}Invalid input for restock{Colors.RESET}")
+            print(f"{Colors.ERROR}[INTERFACE ERROR]{Colors.RESET} Invalid input for restock")
             return
         
-        import time
-        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Restock request: {Colors.BOLD}{quantity}{Colors.RESET} units")
-        time.sleep(0.4)
+        print(f"{Colors.CYAN}[INTERFACE]{Colors.RESET} Restock request: {quantity} units")
 
         """
             Create a command object to pass to the core system for restocking inventory

@@ -1,5 +1,4 @@
 from utils.colors import Colors
-import time
 
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
@@ -7,6 +6,7 @@ class KioskCoreSystem:
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
+        print(f" {Colors.HEADER}◈ {Colors.BOLD}CORE KERNEL:{Colors.RESET} {Colors.TEXT}Aura Retail OS loaded.{Colors.RESET}")
 
         self.kioskType = kioskType
         self.systemStatus = "ACTIVE"
@@ -19,8 +19,7 @@ class KioskCoreSystem:
     def attachModule(self, module):
         """ Attaches a HardwareModule (Decorator) to the system """
         self.top_module = module
-        print(f"{Colors.HEADER}[CORE]{Colors.RESET} Module attached: {Colors.CYAN}{type(module).__name__}{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.HEADER}[CORE]{Colors.RESET} Module attached: {type(module).__name__}")
         self.top_module.activate()
 
     def getModuleStatuses(self):
@@ -59,21 +58,20 @@ class KioskCoreSystem:
 
         # 1. Validate command object
         if command is None:
-            print(f"{Colors.ERROR}[CORE] Invalid command.{Colors.RESET}")
+            print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} Invalid command.")
             return False
 
         if not hasattr(command, "execute"):
-            print(f"{Colors.ERROR}[CORE] Command does not implement execute().{Colors.RESET}")
+            print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} Command does not implement execute().")
             return False
 
         # 2. Check system status
         if not self.checkSystemStatus():
-            print(f"{Colors.ERROR}[CORE] System not ready. Cannot execute command.{Colors.RESET}")
+            print(f"{Colors.WARNING}[CORE]{Colors.RESET} System not ready. Cannot execute command.")
             return False
 
         try:
-            print(f"{Colors.HEADER}[CORE]{Colors.RESET} Executing {Colors.BOLD}{command.__class__.__name__}{Colors.RESET}...")
-            time.sleep(0.3)
+            print(f"\n{Colors.HEADER}[CORE]{Colors.RESET} Executing {command.__class__.__name__}...")
 
             # 3. Execute command
             result = command.execute(self)
@@ -81,23 +79,22 @@ class KioskCoreSystem:
             # 4. Save history
             self.commandHistory.append(command)
 
-            print(f"{Colors.SUCCESS}[CORE] Command executed successfully.{Colors.RESET}")
-            time.sleep(0.3)
+            print(f"{Colors.HEADER}[CORE]{Colors.RESET} Command executed successfully.")
             return True
 
         except Exception as e:
-            print(f"{Colors.ERROR}[CORE ERROR] {str(e)}{Colors.RESET}")
+            print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} {str(e)}")
             self.systemStatus = "ERROR"
             return False
 
     def checkSystemStatus(self):
 
         if self.systemStatus == "ERROR":
-            print(f"{Colors.ERROR}[CORE] System in ERROR state.{Colors.RESET}")
+            print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} System in ERROR state.")
             return False
 
         if self.systemStatus == "EMERGENCY":
-            print(f"{Colors.WARNING}[CORE] Emergency mode active. Limited operations.{Colors.RESET}")
+            print(f"{Colors.WARNING}[CORE]{Colors.RESET} Emergency mode active. Limited operations.")
             return True
 
         return True
@@ -108,12 +105,12 @@ class KioskCoreSystem:
 
         if status in validStates:
             self.systemStatus = status
-            print(f"{Colors.HEADER}[CORE]{Colors.RESET} System status changed to {Colors.BOLD}{status}{Colors.RESET}")
+            print(f"{Colors.HEADER}[CORE]{Colors.RESET} System status changed to {status}")
         else:
-            print(f"{Colors.ERROR}[CORE] Invalid system status.{Colors.RESET}")
+            print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} Invalid system status.")
 
     def getSystemStatus(self):
         return self.systemStatus
 
     def getCommandHistory(self):
-        return self.commandHistory
+        return self.commandHistory

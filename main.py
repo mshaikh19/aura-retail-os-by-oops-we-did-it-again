@@ -330,18 +330,36 @@ def purchaseFlow(interface, products):
     pauseScreen()
 
 def refundFlow(interface):
+    width = 80
     clearScreen()
-    try:
-        amount = float(input(" Enter amount to refund: Rs."))
-    except ValueError:
-        print(Colors.ERROR + " Please enter a valid number." + Colors.RESET)
-        pauseScreen()
-        return
+    printLogo()
+    print(centerLine(f"{Colors.HEADER}◈ REFUND PROCESSING CENTER{Colors.RESET}", width))
+    print(centerLine(f"{Colors.DIM}Standard reversal protocol v4.0{Colors.RESET}", width))
+    print()
 
     method = paymentChoice()
-    interface.refundTransaction(amount, method)
-    showProgress("Contacting Bank for Refund")
-    print(Colors.SUCCESS + " [DONE] Amount has been reversed." + Colors.RESET)
+    
+    # Process the refund
+    clearScreen()
+    printLogo()
+    print(centerLine(f"{Colors.CYAN}Initiating Reversal Sequence...{Colors.RESET}", width))
+    print()
+    
+    try:
+        # The interface now returns True/False based on core execution
+        success = interface.refundTransaction(method)
+        
+        if success:
+            showProgress("Validating Transaction History", duration=0.6, width=width)
+            showProgress("Contacting Bank for Reversal", duration=0.8, width=width)
+            print("\n" + centerLine(f"{Colors.SUCCESS}[SUCCESS] The transaction has been fully reversed.{Colors.RESET}", width))
+            print(centerLine(f"{Colors.TEXT}Funds will reflect in your {method} account shortly.{Colors.RESET}", width))
+        else:
+            # Error message is usually printed by the subsystems (PaymentSystem/Core)
+            print("\n" + centerLine(f"{Colors.ERROR}[FAILED] Reversal could not be completed.{Colors.RESET}", width))
+    except Exception as e:
+        print("\n" + centerLine(f"{Colors.ERROR}[SYSTEM ERROR] {str(e)}{Colors.RESET}", width))
+
     pauseScreen()
 
 def restockFlow(interface, products):

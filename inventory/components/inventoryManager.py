@@ -1,4 +1,5 @@
 from .inventoryComponent import InventoryComponent
+from utils.colors import Colors
 
 class InventorySystem:
     """
@@ -7,6 +8,7 @@ class InventorySystem:
     """
     def __init__(self):
         self._items = {}
+        print(f" {Colors.CYAN}◈ {Colors.BOLD}INVENTORY:{Colors.RESET} {Colors.TEXT}Core engine mounted.{Colors.RESET}")
 
     def addProduct(self, name: str, item: InventoryComponent):
         self._items[name] = item

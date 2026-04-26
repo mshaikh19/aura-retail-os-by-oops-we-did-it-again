@@ -1,16 +1,13 @@
 from hardware.interfaces.dispenserInterface import DispenserInterface
-from utils.colors import Colors
-import time
 
 
 class ConveyorDispenser(DispenserInterface):
     """
-    Simulates conveyor belt transport for electronic items.
+    Simulates conveyor belt (used in bulk/emergency kiosks)
     """
 
     def dispense(self, product_name, quantity):
-        print(f"{Colors.BLUE}[CONVEYOR]{Colors.RESET} Belt active → moving {Colors.BOLD}{quantity}x {product_name}{Colors.RESET}")
-        time.sleep(0.5)
+        print(f"[CONVEYOR] Belt delivering {quantity}x {product_name}")
         return True
 
     def calibrate(self):

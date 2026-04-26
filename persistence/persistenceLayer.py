@@ -72,6 +72,20 @@ class PersistentLayer:
         with open(file_path, "w") as file:
             json.dump(transactions, file, indent=4)
 
+    @staticmethod
+    def loadTransactions():
+        """
+        Load all transactions from transactions.json
+        """
+        file_path = PersistentLayer._getFilePath("transactions.json")
+        if not os.path.exists(file_path):
+            return []
+        with open(file_path, "r") as file:
+            try:
+                return json.load(file)
+            except:
+                return []
+
     # ---------------- INVENTORY ---------------- #
 
     @staticmethod

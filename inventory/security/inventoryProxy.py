@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils.colors import Colors
 
 class SecureInventoryProxy:
     """
@@ -11,6 +12,7 @@ class SecureInventoryProxy:
         self._access_log = []
         self._monitor = monitor  # Optional MonitoringSystem instance injected
         self._on_change = on_change # Callback for persistence synchronization
+        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}SECURITY:{Colors.RESET} {Colors.TEXT}Inventory Proxy Layer synchronized.{Colors.RESET}")
 
     def _log(self, action: str):
         timestamp = datetime.now().strftime("%H:%M:%S")

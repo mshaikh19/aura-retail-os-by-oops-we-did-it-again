@@ -1,7 +1,10 @@
 from .kioskFactory import KioskFactory
 from hardware.dispensers.conveyorDispenser import ConveyorDispenser
+from utils.colors import Colors
 
 class TechGearFactory(KioskFactory):
+    def __init__(self):
+        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}FACTORY:{Colors.RESET} {Colors.TEXT}Cyber-Tech Blueprint selected.{Colors.RESET}")
     """
     Concrete Factory for Cyber-Tech/Electronics Kiosks.
     Sells high-demand gadgets using a Conveyor Belt system.

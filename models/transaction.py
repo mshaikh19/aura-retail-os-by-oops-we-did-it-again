@@ -51,6 +51,23 @@ class Transaction:
             "timestamp": self.timestamp
         }
 
+    @classmethod
+    def fromDict(cls, data):
+        """
+        Creates a Transaction object from a dictionary.
+        """
+        t = cls(
+            product_name=data.get("product_name"),
+            quantity=data.get("quantity"),
+            total_amount=data.get("total_amount"),
+            payment_method=data.get("payment_method"),
+            status=data.get("status"),
+            kiosk_type=data.get("kiosk_type", "UNKNOWN")
+        )
+        t.transaction_id = data.get("transaction_id", t.transaction_id)
+        t.timestamp = data.get("timestamp", t.timestamp)
+        return t
+
     def __repr__(self):
         """
         Returns readable string representation of transaction.

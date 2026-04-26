@@ -1,4 +1,5 @@
 from .command import Command
+from utils.colors import Colors
 
 
 class RefundCommand(Command):
@@ -8,7 +9,7 @@ class RefundCommand(Command):
         self.paymentMethod = paymentMethod
 
     def execute(self, core):
-        print("[Refund] Processing refund for last transaction")
+        print(f"{Colors.HEADER}[Refund]{Colors.RESET} Processing refund for last transaction")
 
         # ensure payment system is available
         if core.paymentSystem is None:
@@ -20,6 +21,6 @@ class RefundCommand(Command):
         if not success:
             raise Exception("Refund failed")
         
-        print("[Refund] Refund completed successfully.")
+        print(f"{Colors.HEADER}[Refund]{Colors.RESET} Refund completed successfully.")
 
         self.log()  # log execution

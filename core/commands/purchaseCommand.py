@@ -1,6 +1,6 @@
 from .command import Command
 from utils.colors import Colors
-import time
+
 
 class PurchaseCommand(Command):
     # concrete command for handling purchase operation
@@ -11,8 +11,7 @@ class PurchaseCommand(Command):
         self.paymentMethod = paymentMethod
 
     def execute(self, core):
-        print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Attempting to purchase {Colors.BOLD}{self.quantity}{Colors.RESET} of {Colors.CYAN}{self.product.getName()}{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Attempting to purchase {self.quantity} of {self.product.getName()}")
 
         # validate product
         if self.product is None:
@@ -24,8 +23,7 @@ class PurchaseCommand(Command):
 
         # calculate total price
         totalAmount = self.product.getPrice() * self.quantity
-        print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Total amount: {Colors.SUCCESS}Rs.{totalAmount}{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Total amount: ₹{totalAmount}")
 
         # ensure payment system exists
         if core.paymentSystem is None:
@@ -46,7 +44,6 @@ class PurchaseCommand(Command):
         # 🔥 hardware integration (Bridge Pattern)
         if core.hardwareSystem:
             print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Sending request to hardware...")
-            time.sleep(0.3)
 
             success = core.hardwareSystem.dispenseProduct(
                 self.product.getName(),   # works for both product & bundle
@@ -70,7 +67,6 @@ class PurchaseCommand(Command):
         else:
             self.product.reduceStock(self.quantity)
 
-        print(f"{Colors.SUCCESS}[Purchase] Purchase completed successfully.{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Purchase completed successfully.")
 
-        self.log()  # common logging
+        self.log()  # common logging

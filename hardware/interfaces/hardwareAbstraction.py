@@ -1,6 +1,6 @@
 from hardware.interfaces.sensorMotorModule import SensorMotorModule
 from utils.colors import Colors
-import time
+
 
 class HardwareAbstraction:
     """
@@ -12,21 +12,20 @@ class HardwareAbstraction:
     def __init__(self, dispenser, sensorMotor=None):
         self._dispenser = dispenser
         self._sensorMotor = sensorMotor if sensorMotor else SensorMotorModule()
+        print(f" {Colors.CYAN}◈ {Colors.BOLD}HARDWARE:{Colors.RESET} {Colors.TEXT}Abstraction Layer bridged.{Colors.RESET}")
 
     def swapDispenser(self, newDispenser):
         """
         Replace current dispenser at runtime
         """
         self._dispenser = newDispenser
-        print(f"{Colors.BLUE}[HW]{Colors.RESET} Dispenser swapped to {Colors.BOLD}{newDispenser.__class__.__name__}{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.BLUE}[HW]{Colors.RESET} Dispenser swapped to {newDispenser.__class__.__name__}")
 
     def dispenseProduct(self, product_name, quantity):
         """
         Main method used by system to dispense products
         """
         print(f"{Colors.BLUE}[HW]{Colors.RESET} Starting dispense process...")
-        time.sleep(0.4)
 
         # start motor
         self._sensorMotor.startMotor()
@@ -38,18 +37,17 @@ class HardwareAbstraction:
         self._sensorMotor.stopMotor()
 
         if not success:
-            print(f"{Colors.ERROR}[HW ERROR] Dispense failed{Colors.RESET}")
+            print(f"{Colors.ERROR}[HW ERROR]{Colors.RESET} Dispense failed")
             return False
 
-        print(f"{Colors.SUCCESS}[HW] Dispense successful{Colors.RESET}")
-        time.sleep(0.3)
+        print(f"{Colors.BLUE}[HW]{Colors.RESET} Dispense successful")
         return True
 
     def runCalibration(self):
         """
         Calibrate hardware
         """
-        print("[HW] Running calibration...")
+        print(f"{Colors.BLUE}[HW]{Colors.RESET} Running calibration...")
         return self._dispenser.calibrate()
 
     def getStatus(self):

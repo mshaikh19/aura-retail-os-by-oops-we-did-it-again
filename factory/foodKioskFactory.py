@@ -1,7 +1,10 @@
 from .kioskFactory import KioskFactory
 from hardware.dispensers.spiralDispenser import SpiralDispenser
+from utils.colors import Colors
 
 class FoodKioskFactory(KioskFactory):
+    def __init__(self):
+        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}FACTORY:{Colors.RESET} {Colors.TEXT}Food & Beverage Blueprint selected.{Colors.RESET}")
     """
     Concrete Factory for Food/Vending Kiosks.
     Uses Spiral (Coil) mechanism for dispensing snacks and drinks.
