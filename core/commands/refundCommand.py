@@ -24,3 +24,4 @@ class RefundCommand(Command):
         print(f"{Colors.HEADER}[Refund]{Colors.RESET} Refund completed successfully.")
 
         self.log()  # log execution
+        return True

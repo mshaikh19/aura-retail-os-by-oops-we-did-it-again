@@ -96,19 +96,23 @@ class PaymentSystem:
             print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} No active session found.")
             return False
 
-        # Filter session transactions
+        # Filter session transactions that are eligible for refund (not already refunded)
         session_tx_ids = active_session.transaction_ids
-        session_transactions = [t for t in self.transactionHistory if t.transaction_id in session_tx_ids]
-
-        if not session_transactions:
-            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No transactions found in current session.")
-            return False
-
-        last_transaction = session_transactions[-1]
-
-        # Prevent double refund
-        if last_transaction.status == "REFUNDED":
-            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Already refunded")
+        
+        # We search from the end of history to find the most recent matching transaction that isn't refunded
+        last_transaction = None
+        for t in reversed(self.transactionHistory):
+            if t.transaction_id in session_tx_ids and t.status != "REFUNDED":
+                last_transaction = t
+                break
+        
+        if not last_transaction:
+            # Provide specific feedback if transactions exist but are already refunded
+            all_session_tx = [t for t in self.transactionHistory if t.transaction_id in session_tx_ids]
+            if all_session_tx:
+                print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} All items in this session are already refunded.")
+            else:
+                print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No purchases found in the current session.")
             return False
 
         processor = self._getProcessor(method)

@@ -5,7 +5,7 @@ class WalletAdapter(PaymentProcessor):
 
     def processPayment(self, amount):
         print(f"[WALLET] Processing ₹{amount}")
-        return True
+        return True, {}
 
     def refundPayment(self, amount):
         print(f"[WALLET] Refunding ₹{amount}")

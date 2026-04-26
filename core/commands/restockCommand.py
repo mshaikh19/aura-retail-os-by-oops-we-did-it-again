@@ -34,3 +34,4 @@ class RestockCommand(Command):
         print("[Restock] Restock completed successfully.")
 
         self.log()  # log execution
+        return True

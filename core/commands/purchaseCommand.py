@@ -72,3 +72,4 @@ class PurchaseCommand(Command):
         print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Purchase completed successfully.")
 
         self.log()  # common logging
+        return True
