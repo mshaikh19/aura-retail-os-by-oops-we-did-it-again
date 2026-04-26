@@ -12,9 +12,9 @@ from persistence.persistenceLayer import PersistentLayer
 # Import Monitoring System
 from monitoring.monitoring_system import MonitoringSystem
 
-
 from utils.colors import Colors
 from core.sessionManager import SessionManager
+
 
 class PaymentSystem:
 
@@ -22,14 +22,13 @@ class PaymentSystem:
         # Load transaction history from persistent storage
         raw_history = PersistentLayer.loadTransactions()
         self.transactionHistory = []
-        
-        # Convert raw dictionaries back to Transaction objects
+
         for t_dict in raw_history:
             self.transactionHistory.append(Transaction.fromDict(t_dict))
-            
+
         print(f" {Colors.WARNING}◈ {Colors.BOLD}PAYMENT:{Colors.RESET} {Colors.TEXT}Gateway API initialized ({len(self.transactionHistory)} history entries).{Colors.RESET}")
 
-         # Factory mapping for payment processors
+        # Factory mapping for payment processors
         self.processors = {
             "UPI": UPIAdapter,
             "CARD": CardAdapter,
@@ -47,17 +46,18 @@ class PaymentSystem:
             print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} Invalid payment method")
             return False
 
-        # Process payment using adapter
-        result = processor.processPayment(amount)
+        # 🔥 UPDATED: adapter returns (success, details)
+        success, details = processor.processPayment(amount)
 
-        if result:
+        if success:
             transaction = Transaction(
                 product_name=product_name if product_name else "UNKNOWN",
                 quantity=quantity if quantity else 0,
                 total_amount=amount,
                 payment_method=method,
                 status="SUCCESS",
-                kiosk_type=kiosk_type
+                kiosk_type=kiosk_type,
+                payment_details=details   # 🔥 store details
             )
 
             # Store in memory
@@ -77,7 +77,7 @@ class PaymentSystem:
             print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Payment completed")
             return transaction
 
-        print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Payment completed")
+        print(f"{Colors.ERROR}[PAYMENT]{Colors.RESET} Payment failed")
         return None
 
     # ---------------- REFUND ---------------- #
@@ -85,48 +85,69 @@ class PaymentSystem:
     def refund(self, method):
         print(f"\n{Colors.WARNING}[PAYMENT]{Colors.RESET} Starting refund...")
 
-        # Get the current session to filter refunds
-        active_session = SessionManager().getActiveSession()
-        if not active_session:
-            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} No active session found. Cannot process refund.")
+        # BLOCK WALLET REFUND
+        if method == "WALLET":
+            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} Wallet refunds are not supported")
             return False
 
-        # Find the last transaction that belongs to THIS session
+        # Get active session
+        active_session = SessionManager().getActiveSession()
+        if not active_session:
+            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} No active session found.")
+            return False
+
+        # Filter session transactions
         session_tx_ids = active_session.transaction_ids
         session_transactions = [t for t in self.transactionHistory if t.transaction_id in session_tx_ids]
 
         if not session_transactions:
-            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No transactions found in the current session.")
+            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No transactions found in current session.")
             return False
 
-        # Get the last transaction from THIS session
         last_transaction = session_transactions[-1]
 
         # Prevent double refund
         if last_transaction.status == "REFUNDED":
-            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Last transaction already refunded")
+            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Already refunded")
             return False
 
         processor = self._getProcessor(method)
 
         if processor is None:
-            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} Invalid payment method")
+            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} Invalid method")
             return False
 
         amount = last_transaction.total_amount
 
         print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Refunding Rs.{amount} for {last_transaction.product_name}")
 
-        result = processor.refundPayment(amount)
+        # smart refund
+        original_method = last_transaction.payment_method
+        stored_details = last_transaction.payment_details
+
+        # SAME METHOD → reuse details
+        if method == original_method:
+            print(f"{Colors.CYAN}[PAYMENT]{Colors.RESET} Using stored details: {stored_details}")
+            result = processor.refundPayment(amount)
+
+        # DIFFERENT METHOD → re-authenticate
+        else:
+            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Different method selected. Verification required.")
+            
+            # reuse adapter input (safe way)
+            success, _ = processor.processPayment(0)  # just for input
+
+            if not success:
+                print(f"{Colors.ERROR}[PAYMENT]{Colors.RESET} Verification failed")
+                return False
+
+            result = processor.refundPayment(amount)
 
         if result:
-            # Update transaction status
             last_transaction.status = "REFUNDED"
 
-            # Save updated transaction
             PersistentLayer.saveTransaction(last_transaction.toDict())
 
-            # Notify monitoring system
             MonitoringSystem.notify(
                 "PAYMENT",
                 "REFUND_COMPLETE",

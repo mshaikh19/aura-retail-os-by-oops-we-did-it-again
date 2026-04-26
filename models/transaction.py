@@ -8,7 +8,7 @@ class Transaction:
     Stores all details related to a purchase or refund.
     """
 
-    def __init__(self, product_name, quantity, total_amount, payment_method, status, kiosk_type="UNKNOWN"):
+    def __init__(self, product_name, quantity, total_amount, payment_method, status, kiosk_type="UNKNOWN", payment_details=None):
         """
         Initializes a transaction with all required details.
         """
@@ -26,7 +26,7 @@ class Transaction:
         # Payment method used (UPI / CARD / WALLET)
         self.payment_method = payment_method
 
-        # Transaction status (SUCCESS / FAILED / REFUNDED)
+        # Transaction status (SUCCESS / FAILED / REFUNDED / ROLLED_BACK)
         self.status = status
 
         # Kiosk Application Type
@@ -34,6 +34,9 @@ class Transaction:
 
         # Timestamp of transaction
         self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # store payment details safely
+        self.payment_details = payment_details if payment_details else {}
 
     def toDict(self):
         """
@@ -48,7 +51,8 @@ class Transaction:
             "payment_method": self.payment_method,
             "status": self.status,
             "kiosk_type": self.kiosk_type,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
+            "payment_details": self.payment_details   
         }
 
     @classmethod
@@ -62,7 +66,8 @@ class Transaction:
             total_amount=data.get("total_amount"),
             payment_method=data.get("payment_method"),
             status=data.get("status"),
-            kiosk_type=data.get("kiosk_type", "UNKNOWN")
+            kiosk_type=data.get("kiosk_type", "UNKNOWN"),
+            payment_details=data.get("payment_details", {})   
         )
         t.transaction_id = data.get("transaction_id", t.transaction_id)
         t.timestamp = data.get("timestamp", t.timestamp)
@@ -76,4 +81,5 @@ class Transaction:
         return (f"Transaction(id={self.transaction_id}, "
                 f"product={self.product_name}, qty={self.quantity}, "
                 f"amount={self.total_amount}, method={self.payment_method}, "
-                f"status={self.status}, time={self.timestamp})")
+                f"status={self.status}, time={self.timestamp}, "
+                f"details={self.payment_details})")  
