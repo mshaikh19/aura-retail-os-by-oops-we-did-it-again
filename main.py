@@ -337,6 +337,13 @@ def refundFlow(interface):
     print(centerLine(f"{Colors.DIM}Standard reversal protocol v4.0{Colors.RESET}", width))
     print()
 
+    # Pre-check: Is a refund even possible in this session?
+    if not interface.isRefundAvailable():
+        print(centerLine(f"{Colors.ERROR}[DENIED] No eligible transactions found in your current session.{Colors.RESET}", width))
+        print(centerLine(f"{Colors.TEXT}Refunds are only available for items purchased in the active session.{Colors.RESET}", width))
+        pauseScreen()
+        return
+
     method = paymentChoice()
     
     # Process the refund
@@ -652,6 +659,9 @@ def runKiosk():
         )
     )
 
+    # Step 7: Initialize Session
+    core.sessionManager.startSession(kiosk_id="AURA-001")
+
     # --- RESTORE PERSISTENT HARDWARE MODULES ---
     def restore_modules():
         saved_modules = registry.getConfig("ACTIVE_MODULES") or []
@@ -718,6 +728,9 @@ def runKiosk():
             elif sub_choice == "3":
                 continue
         elif choice == "5":
+            # Safely close the active session
+            core.sessionManager.endSession()
+            
             clearScreen()
             drawBox("SHUTDOWN SEQUENCE", [
                 "Cleaning up subsystems...",

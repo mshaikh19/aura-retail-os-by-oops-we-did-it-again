@@ -37,6 +37,14 @@ class KioskInterface:
         command = PurchaseCommand(product, quantity, paymentMethod)
         self.core.executeCommand(command)
 
+    def isRefundAvailable(self):
+        """
+        FACADE PATTERN
+        Checks if there are any transactions in the current session available for refund.
+        """
+        session = self.core.sessionManager.getActiveSession()
+        return session is not None and len(session.transaction_ids) > 0
+
     def refundTransaction(self, paymentMethod):
         """
         FACADE PATTERN

@@ -102,6 +102,52 @@ class PersistentLayer:
         """
         return PersistentLayer.load(filename)
 
+    # ---------------- SESSIONS ---------------- #
+
+    @staticmethod
+    def saveSession(session_dict):
+        """
+        Append a session to sessions.json
+        """
+        file_path = PersistentLayer._getFilePath("sessions.json")
+        os.makedirs(PersistentLayer.BASE_PATH, exist_ok=True)
+
+        sessions = []
+        if os.path.exists(file_path):
+            with open(file_path, "r") as file:
+                try:
+                    sessions = json.load(file)
+                except:
+                    sessions = []
+
+        # Check if session already exists (update it) or append
+        found = False
+        for i, s in enumerate(sessions):
+            if s["session_id"] == session_dict["session_id"]:
+                sessions[i] = session_dict
+                found = True
+                break
+        
+        if not found:
+            sessions.append(session_dict)
+
+        with open(file_path, "w") as file:
+            json.dump(sessions, file, indent=4)
+
+    @staticmethod
+    def loadSessions():
+        """
+        Load all session data
+        """
+        file_path = PersistentLayer._getFilePath("sessions.json")
+        if not os.path.exists(file_path):
+            return []
+        with open(file_path, "r") as file:
+            try:
+                return json.load(file)
+            except:
+                return []
+
     # ---------------- CONFIG ---------------- #
 
     @staticmethod
@@ -110,3 +156,10 @@ class PersistentLayer:
         Save system configuration
         """
         PersistentLayer.save("config.json", config_dict)
+
+    @staticmethod
+    def loadConfig():
+        """
+        Load system configuration
+        """
+        return PersistentLayer.load("config.json")

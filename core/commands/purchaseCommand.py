@@ -30,15 +30,17 @@ class PurchaseCommand(Command):
             raise Exception("Payment system unavailable")
 
         # process payment
-        paymentSuccess = core.paymentSystem.makePayment(
+        transaction = core.paymentSystem.makePayment(
             self.paymentMethod,
             totalAmount,
             self.product.getName(),
             self.quantity,
             kiosk_type=core.kioskType
         )
+        
+        self.last_transaction = transaction # Store for session linking
 
-        if not paymentSuccess:
+        if not transaction:
             raise Exception("Payment failed")
 
         # 🔥 hardware integration (Bridge Pattern)

@@ -1,4 +1,5 @@
 from utils.colors import Colors
+from core.sessionManager import SessionManager
 
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
@@ -6,6 +7,7 @@ class KioskCoreSystem:
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
+        self.sessionManager = SessionManager()
         print(f" {Colors.HEADER}◈ {Colors.BOLD}CORE KERNEL:{Colors.RESET} {Colors.TEXT}Aura Retail OS loaded.{Colors.RESET}")
 
         self.kioskType = kioskType
@@ -78,6 +80,12 @@ class KioskCoreSystem:
 
             # 4. Save history
             self.commandHistory.append(command)
+
+            # 5. Session Tracking (Link transaction if applicable)
+            if result and self.sessionManager:
+                if hasattr(command, 'last_transaction') and command.last_transaction:
+                    t = command.last_transaction
+                    self.sessionManager.linkTransaction(t.transaction_id, t.total_amount)
 
             print(f"{Colors.HEADER}[CORE]{Colors.RESET} Command executed successfully.")
             return True

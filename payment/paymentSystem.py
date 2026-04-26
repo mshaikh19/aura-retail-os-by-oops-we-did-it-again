@@ -14,6 +14,7 @@ from monitoring.monitoring_system import MonitoringSystem
 
 
 from utils.colors import Colors
+from core.sessionManager import SessionManager
 
 class PaymentSystem:
 
@@ -73,22 +74,33 @@ class PaymentSystem:
             )
 
             print(f"{Colors.SUCCESS}[PAYMENT]{Colors.RESET} Transaction recorded successfully.")
+            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Payment completed")
+            return transaction
 
         print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} Payment completed")
-        return result
+        return None
 
     # ---------------- REFUND ---------------- #
 
     def refund(self, method):
         print(f"\n{Colors.WARNING}[PAYMENT]{Colors.RESET} Starting refund...")
 
-        # No transactions
-        if not self.transactionHistory:
-            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No transactions available for refund")
+        # Get the current session to filter refunds
+        active_session = SessionManager().getActiveSession()
+        if not active_session:
+            print(f"{Colors.ERROR}[PAYMENT ERROR]{Colors.RESET} No active session found. Cannot process refund.")
             return False
 
-        # Get last transaction
-        last_transaction = self.transactionHistory[-1]
+        # Find the last transaction that belongs to THIS session
+        session_tx_ids = active_session.transaction_ids
+        session_transactions = [t for t in self.transactionHistory if t.transaction_id in session_tx_ids]
+
+        if not session_transactions:
+            print(f"{Colors.WARNING}[PAYMENT]{Colors.RESET} No transactions found in the current session.")
+            return False
+
+        # Get the last transaction from THIS session
+        last_transaction = session_transactions[-1]
 
         # Prevent double refund
         if last_transaction.status == "REFUNDED":
