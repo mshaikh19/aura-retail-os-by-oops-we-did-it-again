@@ -1,5 +1,6 @@
 from hardware.interfaces.sensorMotorModule import SensorMotorModule
-
+from utils.colors import Colors
+import time
 
 class HardwareAbstraction:
     """
@@ -17,13 +18,15 @@ class HardwareAbstraction:
         Replace current dispenser at runtime
         """
         self._dispenser = newDispenser
-        print(f"[HW] Dispenser swapped to {newDispenser.__class__.__name__}")
+        print(f"{Colors.BLUE}[HW]{Colors.RESET} Dispenser swapped to {Colors.BOLD}{newDispenser.__class__.__name__}{Colors.RESET}")
+        time.sleep(0.3)
 
     def dispenseProduct(self, product_name, quantity):
         """
         Main method used by system to dispense products
         """
-        print("[HW] Starting dispense process...")
+        print(f"{Colors.BLUE}[HW]{Colors.RESET} Starting dispense process...")
+        time.sleep(0.4)
 
         # start motor
         self._sensorMotor.startMotor()
@@ -35,10 +38,11 @@ class HardwareAbstraction:
         self._sensorMotor.stopMotor()
 
         if not success:
-            print("[HW ERROR] Dispense failed")
+            print(f"{Colors.ERROR}[HW ERROR] Dispense failed{Colors.RESET}")
             return False
 
-        print("[HW] Dispense successful")
+        print(f"{Colors.SUCCESS}[HW] Dispense successful{Colors.RESET}")
+        time.sleep(0.3)
         return True
 
     def runCalibration(self):

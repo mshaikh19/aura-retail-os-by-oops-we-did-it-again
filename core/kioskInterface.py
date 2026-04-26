@@ -28,7 +28,9 @@ class KioskInterface:
         """
             Process the request
         """
-        print(f"[INTERFACE] Purchase request: {quantity} units")
+        import time
+        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Processing {Colors.BOLD}{quantity}{Colors.RESET} unit request...")
+        time.sleep(0.4)
 
         """
             Create a command object to pass to the core system for purchasing product
@@ -45,10 +47,12 @@ class KioskInterface:
                 If amount is less than or equal to 0, return
         """
         if amount <= 0:
-            print("Invalid input for refund")
+            print(f"{Colors.ERROR}Invalid input for refund{Colors.RESET}")
             return
         
-        print(f"[INTERFACE] Refund request: \u20b9{amount}")
+        import time
+        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Refund request: {Colors.BOLD}Rs.{amount}{Colors.RESET}")
+        time.sleep(0.4)
 
         """
             Create a command object to pass to the core system for refunding transaction
@@ -66,10 +70,12 @@ class KioskInterface:
                 If product is not found or quantity is less than or equal to 0, return
         """
         if not product or quantity <= 0:
-            print("Invalid input for restock")
+            print(f"{Colors.ERROR}Invalid input for restock{Colors.RESET}")
             return
         
-        print(f"[INTERFACE] Restock request: {quantity} units")
+        import time
+        print(f"\n{Colors.CYAN}[INTERFACE]{Colors.RESET} Restock request: {Colors.BOLD}{quantity}{Colors.RESET} units")
+        time.sleep(0.4)
 
         """
             Create a command object to pass to the core system for restocking inventory
@@ -93,20 +99,20 @@ class KioskInterface:
         print(Colors.BLUE + " ╠" + "═"*58 + "╣" + Colors.RESET)
         
         # 1. Render Core Section
-        core = data["CORE"]
-        status_color = Colors.SUCCESS if core["System Status"] == "ACTIVE" else Colors.ERROR
-        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}CORE STATUS:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Status:      {status_color}{core['System Status']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Application: {Colors.TEXT}{core['Kiosk Type']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > History:     {Colors.DIM}{core['Command Logs']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        core_data = data["CORE"]
+        status_color = Colors.SUCCESS if core_data["AuraCore Integrity"] == "ACTIVE" else Colors.ERROR
+        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}AURACORE INTEGRITY:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Status:      {status_color}{core_data['AuraCore Integrity']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Personality: {Colors.TEXT}{core_data['Kiosk Personality']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Activity:    {Colors.DIM}{core_data['Activity Ledger']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
         print(Colors.BLUE + " ╟" + "─"*58 + "╢" + Colors.RESET)
         
         # 2. Render Hardware Section
         hw = data["HARDWARE"]
-        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}HARDWARE ENGINE:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Dispenser:   {Colors.HEADER}{hw['Dispenser']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Motor Unit:  {Colors.DIM}{hw['Motor Module']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}HARDWARE STACK:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Dispense Node: {Colors.HEADER}{hw['Dispensing Node']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(f" {Colors.BLUE}║{Colors.RESET}   > Kinetic Drive: {Colors.DIM}{hw['Kiosk Motor Module']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
         # 3. Render Extensions Section (if any)
         ext = data["EXTENSIONS"]

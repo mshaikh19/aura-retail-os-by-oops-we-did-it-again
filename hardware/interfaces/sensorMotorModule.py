@@ -1,3 +1,6 @@
+from utils.colors import Colors
+import time
+
 class SensorMotorModule:
     """
     Simulates motor and sensor layer of hardware system
@@ -9,11 +12,13 @@ class SensorMotorModule:
 
     def startMotor(self):
         self._motorRunning = True
-        print("[MOTOR] Motor started")
+        print(f"{Colors.SUCCESS}[MOTOR]{Colors.RESET} Motor started")
+        time.sleep(0.2)
 
     def stopMotor(self):
         self._motorRunning = False
-        print("[MOTOR] Motor stopped")
+        print(f"{Colors.SUCCESS}[MOTOR]{Colors.RESET} Motor stopped")
+        time.sleep(0.2)
 
     def isMotorRunning(self):
         return self._motorRunning

@@ -32,7 +32,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
 
     while True:
         clearScreen()
-        print(f"\n {Colors.HEADER}{Colors.BOLD}❖ AURA OS | {kiosk_type.upper()} ADMIN{Colors.RESET}")
+        print(f"\n {Colors.HEADER}{Colors.BOLD} AURA OS | {kiosk_type.upper()} ADMIN{Colors.RESET}")
         print(f" {Colors.DIM}─" + "─"*58 + Colors.RESET)
         
         # Dashboard Overview
@@ -52,11 +52,11 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         print(f" {Colors.DIM}─" + "─"*58 + Colors.RESET)
         
         drawBox("ADMINISTRATION SUITE", [
-            " [1]  View Analytics (Filtered)",
+            " [1]  Revenue & Performance Data",
             " [2]  Inventory Health & Restock",
             " [3]  Price & Discount Configuration",
-            " [4]  Run Core Health Audit",
-            " [5]  Return to Customer Terminal"
+            " [4]  System Deep-Scan Audit",
+            " [5] Exit Management Shell"
         ])
         
         print(f"\n {Colors.CYAN}Command{Colors.RESET} {Colors.DIM}>>{Colors.RESET} ", end="")
@@ -74,7 +74,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                 print(f"\n {Colors.DIM}  No transaction data found for this kiosk type.{Colors.RESET}")
             else:
                 print(f" ╔══════════════════════╦══════════════╦══════╦══════════════╗")
-                print(f" ║ TIMESTAMP            ║ IDENTIFIER   ║ QTY  ║ REVENUE      ║")
+                print(f" ║ DATA TIMESTAMP       ║ ASSET ID     ║ VOL  ║ REVENUE      ║")
                 print(f" ╠══════════════════════╬══════════════╬══════╬══════════════╣")
                 for t in transactions[-12:]:
                     name = t['product_name'][:12]
@@ -89,7 +89,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             clearScreen()
             print(f"\n {Colors.HEADER} 📦 INVENTORY HEALTH MONITOR{Colors.RESET}")
             print(f" ╔══════════════════════════════╦══════════════╦════════════════╗")
-            print(f" ║ PRODUCT NAME                 ║ CURRENT      ║ STATUS         ║")
+            print(f" ║ ASSET NAME     ║ UNIT COUNT   ║ HEALTH STATUS  ║")
             print(f" ╠══════════════════════════════╬══════════════╬════════════════╣")
             
             product_keys = []
