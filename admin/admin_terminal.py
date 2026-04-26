@@ -4,17 +4,7 @@ from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
 from monitoring.monitoring_system import MonitoringSystem
 
-# Standard UI Assets (Shared or copied for decoupling)
-class Colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    SUCCESS = '\033[92m'
-    WARNING = '\033[93m'
-    ERROR = '\033[91m'
-    BOLD = '\033[1m'
-    DIM = '\033[2m'
-    RESET = '\033[0m'
+from utils.colors import Colors
 
 def clearScreen():
     print("\033[H\033[J", end="")

@@ -25,6 +25,7 @@ from admin.admin_terminal import adminFlow
 from factory.foodKioskFactory import FoodKioskFactory
 from factory.pharmacyKioskFactory import PharmacyKioskFactory
 from factory.techGearFactory import TechGearFactory
+from core.security.protectionProxy import TechnicianSecurityProxy
 import os
 import time
 from utils.colors import Colors
@@ -416,51 +417,87 @@ def hardwareSimulationMenu(core):
     """
     TECHNICAL HARDWARE SIMULATION
     Manual control over decorators and dispensers.
+    PROTECTED BY: TechnicianSecurityProxy
     """
+    # 1. Protection Layer
+    proxy = TechnicianSecurityProxy(core)
+    
+    clearScreen()
+    print(f"\n {Colors.WARNING}{Colors.BOLD} [!] SECURITY PROTOCOL REQUIRED{Colors.RESET}")
+    print(f" {Colors.DIM}This terminal is restricted to authorized field engineers.{Colors.RESET}")
+    
+    tech_id = input(f"\n {Colors.CYAN}Enter Technician ID: {Colors.RESET}").strip()
+    if not proxy.authenticate(tech_id):
+        return
+
+    def save_hw_config():
+        """ Local helper to sync HW modules to persistent config """
+        modules = core.getActiveModuleNames()
+        registry = CentralRegistry()
+        registry.setConfig("ACTIVE_MODULES", modules)
+        PersistentLayer.saveConfig(registry._config)
+
+    # 2. Main Simulation Console
     while True:
         clearScreen()
-        drawBox("HARDWARE SIMULATION CONTROL", [
-            "Configure physical modules and active extensions:",
-            " [1]  Attach Refrigeration Unit (Cooling)",
-            " [2]  Attach Solar Energy Module",
-            " [3]  Attach 5G Network Link",
-            " [4]  Swap Dispenser Mechanism",
-            " [5]  Clear All Extensions",
-            " [6]  Return to Main Menu"
+        # High-Tech Header
+        print(f" {Colors.HEADER}❖ FIELD SERVICE CONSOLE {Colors.RESET} {Colors.DIM}v4.2.0-STABLE{Colors.RESET}")
+        print(f" {Colors.DIM}───────────────────────────────────────────────────────────{Colors.RESET}")
+        
+        # Live Hardware Feed
+        active = proxy.getModuleStatuses()
+        hw_type = type(core.hardwareSystem._dispenser).__name__
+        
+        print(f" {Colors.BOLD}PHYSICAL STACK:{Colors.RESET} {Colors.CYAN}{hw_type}{Colors.RESET}")
+        print(f" {Colors.BOLD}ACTIVE EXTENSIONS:{Colors.RESET} ", end="")
+        if not active:
+            print(f"{Colors.DIM}None Detected{Colors.RESET}")
+        else:
+            print(", ".join([f"{Colors.SUCCESS}{k.upper()}{Colors.RESET}" for k in active.keys()]))
+            
+        print(f" {Colors.DIM}───────────────────────────────────────────────────────────{Colors.RESET}")
+
+        drawBox("HARDWARE MAINTENANCE TOOLS", [
+            " [1]  Engage Refrigeration Unit",
+            " [2]  Deploy Solar Power Panels",
+            " [3]  Initialize 5G Network Uplink",
+            " [4]  Hot-Swap Dispenser Mechanism",
+            " [5]  Decommission All Extensions",
+            " [6]  Return to Primary Shell"
         ])
         
-        # Show active modules
-        active = core.getModuleStatuses()
-        if active:
-            print(f"\n {Colors.SUCCESS}Active Extensions:{Colors.RESET}")
-            for k, v in active.items():
-                print(f"  - {k.capitalize()}: {v}")
-        
-        choice = input(f"\n {Colors.CYAN}Selection >> {Colors.RESET}").strip()
+        choice = input(f"\n {Colors.CYAN}Technician >> {Colors.RESET}").strip()
         
         if choice == "1":
-            core.attachModule(RefrigerationUnit(core.top_module))
+            proxy.attachModule(RefrigerationUnit(core.top_module))
+            save_hw_config()
+            time.sleep(0.5)
         elif choice == "2":
-            core.attachModule(SolarModule(core.top_module))
+            proxy.attachModule(SolarModule(core.top_module))
+            save_hw_config()
+            time.sleep(0.5)
         elif choice == "3":
-            core.attachModule(NetworkModule(core.top_module))
+            proxy.attachModule(NetworkModule(core.top_module))
+            save_hw_config()
+            time.sleep(0.5)
         elif choice == "4":
             clearScreen()
-            drawBox("DISPENSER SELECTION", [
-                "Select hardware mechanism to mount:",
+            print(f"\n {Colors.WARNING} [!] WARNING: SUSPENDING DISPENSE OPERATIONS{Colors.RESET}")
+            drawBox("MECH SELECTION", [
                 " [1]  Spiral (Standard Vending)",
                 " [2]  Robotic Arm (Precision)",
                 " [3]  Conveyor Belt (Bulk)"
             ])
-            d_choice = input(f"\n {Colors.CYAN}Mechanism >> {Colors.RESET}").strip()
-            if d_choice == "1": core.hardwareSystem.swapDispenser(SpiralDispenser())
-            elif d_choice == "2": core.hardwareSystem.swapDispenser(RoboticDispenser())
-            elif d_choice == "3": # Need to import or use a default
+            d_choice = input(f"\n {Colors.CYAN}Select Mech >> {Colors.RESET}").strip()
+            if d_choice == "1": proxy.swapDispenser(SpiralDispenser())
+            elif d_choice == "2": proxy.swapDispenser(RoboticDispenser())
+            elif d_choice == "3":
                 from hardware.dispensers.conveyorDispenser import ConveyorDispenser
-                core.hardwareSystem.swapDispenser(ConveyorDispenser())
+                proxy.swapDispenser(ConveyorDispenser())
+            time.sleep(1)
         elif choice == "5":
-            core.top_module = None
-            print(f" {Colors.WARNING}All decorators removed.{Colors.RESET}")
+            proxy.clearExtensions()
+            save_hw_config()
             time.sleep(1)
         elif choice == "6":
             break
@@ -554,6 +591,15 @@ def runKiosk():
     registry.setConfig("LOCATION", "Main Hall - Floor 1")
     registry.setConfig("TYPE", kiosk_type_label)
     registry.registerKiosk("AURA-001", core)
+
+    # --- RESTORE PERSISTENT HARDWARE MODULES ---
+    saved_modules = registry.getConfig("ACTIVE_MODULES") or []
+    if saved_modules:
+        print(f"{Colors.CYAN} [BOOT] Restoring {len(saved_modules)} hardware extensions...{Colors.RESET}")
+        for mod_name in saved_modules:
+            if mod_name == "refrigeration": core.attachModule(RefrigerationUnit(core.top_module))
+            elif mod_name == "solar": core.attachModule(SolarModule(core.top_module))
+            elif mod_name == "network": core.attachModule(NetworkModule(core.top_module))
 
     # 5. Initialize Interface (Facade)
     interface = KioskInterface(core)

@@ -25,6 +25,13 @@ class KioskCoreSystem:
             return self.top_module.getStatus()
         return {}
 
+    def getActiveModuleNames(self):
+        """ Returns a simple list of active module keys for persistence """
+        statuses = self.getModuleStatuses()
+        # The status keys usually match the module's core function (e.g., 'refrigeration')
+        # We will use this to map back during boot.
+        return list(statuses.keys())
+
     def getOperationalStatus(self):
         """ Comprehensive system health report structured for UI rendering """
         hw_data = self.hardwareSystem.getStatus() if self.hardwareSystem else {}
