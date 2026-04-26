@@ -29,7 +29,7 @@ class PaymentSystem:
     # ---------------- PAYMENT ---------------- #
 
     def makePayment(self, method, amount, product_name=None, quantity=None, kiosk_type="UNKNOWN"):
-        print("\n[PaymentSystem] Starting payment...")
+        print("\n[PaymentSystem] Starting payment...")   
 
         processor = self._getProcessor(method)
 
@@ -65,7 +65,29 @@ class PaymentSystem:
 
             print("[PaymentSystem] Transaction recorded successfully.")
 
-        print("[PaymentSystem] Payment completed")
+        else:
+            transaction = Transaction(
+                product_name=product_name if product_name else "UNKNOWN",
+                quantity=quantity if quantity else 0,
+                total_amount=amount,
+                payment_method=method,
+                status="FAILED",
+                kiosk_type=kiosk_type
+            )   
+
+            self.transactionHistory.append(transaction)
+            PersistentLayer.saveTransaction(transaction.toDict())
+
+            MonitoringSystem.notify(
+                "PAYMENT",
+                "TRANSACTION_FAILED",
+                f"Rs.{amount} via {method}"
+            )
+
+        if result:
+            print("[PaymentSystem] Payment completed successfully")
+        else:
+            print("[PaymentSystem] Payment failed")
         return result
 
     # ---------------- REFUND ---------------- #
@@ -102,8 +124,18 @@ class PaymentSystem:
             # Update transaction status
             last_transaction.status = "REFUNDED"
 
+            refund_txn = Transaction(
+                product_name=last_transaction.product_name,
+                quantity=last_transaction.quantity,
+                total_amount=amount,
+                payment_method=method,
+                status="REFUNDED",
+                kiosk_type=last_transaction.kiosk_type
+            )
+
+            self.transactionHistory.append(refund_txn)
             # Save updated transaction
-            PersistentLayer.saveTransaction(last_transaction.toDict())
+            PersistentLayer.saveTransaction(refund_txn.toDict())
 
             # Notify monitoring system
             MonitoringSystem.notify(
@@ -116,6 +148,63 @@ class PaymentSystem:
 
         print("[PaymentSystem] Refund completed")
         return result
+
+
+    # ---------------- ROLLBACK ---------------- #
+
+    def rollbackLastPayment(self, method):
+        """
+        Atomic rollback support (for hardware failure case)
+        """
+        print("\n[PaymentSystem] Rolling back last payment...")
+
+        if not self.transactionHistory:
+            print("[PaymentSystem] No transaction to rollback")
+            return False
+
+        last_transaction = self.transactionHistory[-1]
+
+        if last_transaction.status != "SUCCESS":
+            print("[PaymentSystem] Cannot rollback non-success transaction")
+            return False
+
+        amount = last_transaction.total_amount
+
+        processor = self._getProcessor(method)
+
+        if processor is None:
+            print("[PaymentSystem] Invalid payment method")
+            return False
+
+        result = processor.refundPayment(amount)
+
+        if result:
+            last_transaction.status = "ROLLED_BACK"
+
+            rollback_txn = Transaction(
+                product_name=last_transaction.product_name,
+                quantity=last_transaction.quantity,
+                total_amount=amount,
+                payment_method=method,
+                status="ROLLED_BACK",
+                kiosk_type=last_transaction.kiosk_type
+            )
+
+            self.transactionHistory.append(rollback_txn)
+            PersistentLayer.saveTransaction(rollback_txn.toDict())
+
+            MonitoringSystem.notify(
+                "PAYMENT",
+                "ROLLBACK",
+                f"Rs.{amount} rolled back via {method}"
+            )
+
+            print("[PaymentSystem] Rollback successful")
+
+        else:
+            print("[CRITICAL] Rollback failed!")
+
+        return result    
 
     # ---------------- HELPER ---------------- #
 
