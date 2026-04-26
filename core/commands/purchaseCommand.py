@@ -1,35 +1,48 @@
 from .command import Command
 from utils.colors import Colors
+import random
 
 
 class PurchaseCommand(Command):
-    # concrete command for handling purchase operation
 
     def __init__(self, product, quantity, paymentMethod):
         self.product = product
         self.quantity = quantity
         self.paymentMethod = paymentMethod
+        self.last_transaction = None
 
     def execute(self, core):
+
         print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Attempting to purchase {self.quantity} of {self.product.getName()}")
 
-        # validate product
+        # ---------------- VALIDATION ---------------- #
+
         if self.product is None:
             raise Exception("Invalid product")
 
-        # check stock availability (Composite-safe)
         if self.product.getAvailableStock() < self.quantity:
             raise Exception("Not enough stock")
 
-        # calculate total price
+        # ---------------- TASK 7.2: HARDWARE DEPENDENCY ---------------- #
+
+        required_module = getattr(self.product.model, "required_module", None)
+
+        if required_module:
+            active_modules = core.getActiveModuleNames()
+
+            if required_module not in active_modules:
+                raise Exception(f"{self.product.getName()} requires {required_module.upper()} module")
+
+        # ---------------- PRICE ---------------- #
+
         totalAmount = self.product.getPrice() * self.quantity
         print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Total amount: ₹{totalAmount}")
 
-        # ensure payment system exists
         if core.paymentSystem is None:
             raise Exception("Payment system unavailable")
 
-        # process payment
+        # ---------------- PAYMENT ---------------- #
+
         transaction = core.paymentSystem.makePayment(
             self.paymentMethod,
             totalAmount,
@@ -37,39 +50,52 @@ class PurchaseCommand(Command):
             self.quantity,
             kiosk_type=core.kioskType
         )
-        
-        self.last_transaction = transaction # Store for session linking
 
         if not transaction:
             raise Exception("Payment failed")
 
-        # 🔥 hardware integration (Bridge Pattern)
+        self.last_transaction = transaction
+
+        # ---------------- HARDWARE DISPENSE ---------------- #
+
         if core.hardwareSystem:
             print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Sending request to hardware...")
 
             success = core.hardwareSystem.dispenseProduct(
-                self.product.getName(),   # works for both product & bundle
+                self.product.getName(),
                 self.quantity
             )
 
-            if not success:
-                raise Exception("Dispense failed — transaction cancelled")
+            # ---------------- TASK 7.3: FAILURE SIMULATION ---------------- #
+            if random.random() < 0.2:   # 20% failure chance
+                print(f"{Colors.ERROR}[HARDWARE]{Colors.RESET} Simulated hardware failure")
+                success = False
 
-        # update inventory AFTER successful payment + dispense
-        # PASS THROUGH PROXY (Step 4: Observer Trigger)
+            # ---------------- ATOMIC TRANSACTION (4.2) ---------------- #
+            if not success:
+                print(f"{Colors.ERROR}[Purchase]{Colors.RESET} Dispense failed — rolling back")
+
+                # rollback payment
+                core.paymentSystem.refund(self.paymentMethod)
+
+                # system goes into error state
+                core.setSystemStatus("ERROR")
+
+                raise Exception("Transaction rolled back due to hardware failure")
+
+        # ---------------- INVENTORY UPDATE ---------------- #
+
         if core.inventorySystem:
-            # Dynamically find the key in the inventory that matches this product
-            # This ensures persistence and monitoring are triggered correctly
             product_key = core.inventorySystem.findKeyForProduct(self.product)
+
             if product_key:
                 core.inventorySystem.reduceStock(product_key, self.quantity)
             else:
-                # Fallback to direct reduction if not in manager (unlikely)
                 self.product.reduceStock(self.quantity)
         else:
             self.product.reduceStock(self.quantity)
 
         print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Purchase completed successfully.")
 
-        self.log()  # common logging
+        self.log()
         return True
