@@ -1,3 +1,4 @@
+from utils.colors import Colors
 import datetime
 
 class MonitoringSystem:
@@ -16,15 +17,15 @@ class MonitoringSystem:
         if event_type not in cls._subscribers:
             cls._subscribers[event_type] = []
         cls._subscribers[event_type].append(handler)
-        print(f"[MONITORING] Subscriber added for event: {event_type}")
+        print(f"{Colors.CYAN}[MONITORING]{Colors.RESET} Subscriber added for: {Colors.BOLD}{event_type}{Colors.RESET}")
 
     @classmethod
     def notify(cls, source, event_type, detail=""):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        alert_msg = f"[{timestamp}] [{source}] {event_type}: {detail}"
+        alert_msg = f"{Colors.DIM}[{timestamp}]{Colors.RESET} {Colors.HEADER}[{source}]{Colors.RESET} {Colors.BOLD}{event_type}{Colors.RESET}: {detail}"
         
         cls._alerts.append(alert_msg)
-        print(f"[MONITORING] {alert_msg}")
+        print(f"{Colors.CYAN}[MONITORING]{Colors.RESET} {alert_msg}")
 
         # Notify all subscribers listening to this specific event
         if event_type in cls._subscribers:

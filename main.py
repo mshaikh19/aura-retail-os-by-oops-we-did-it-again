@@ -21,7 +21,7 @@ from monitoring.monitoring_system import MonitoringSystem
 from persistence.persistenceLayer import PersistentLayer
 
 # Import Modules
-from admin.admin_terminal import adminFlow
+from admin.adminTerminal import adminFlow
 from factory.foodKioskFactory import FoodKioskFactory
 from factory.pharmacyKioskFactory import PharmacyKioskFactory
 from factory.techGearFactory import TechGearFactory
@@ -51,55 +51,86 @@ def pauseScreen():
     print(Colors.CYAN + " " + Colors.BOLD + ">>" + Colors.RESET + Colors.TEXT + " Press " + Colors.BOLD + "ENTER" + Colors.RESET + " to return to menu..." + Colors.RESET)
     input()
 
-def renderHeader(registry):
-    """ Renders a persistent system header """
+def renderHeader(registry, width=80):
+    """ Renders a persistent system header centered on screen """
     kiosk_id = registry.getConfig("KIOSK_ID") or "UNKNOWN"
     location = registry.getConfig("LOCATION") or "OFFLINE"
     kiosk_type = registry.getConfig("TYPE") or "CORE"
     curr_time = time.strftime("%H:%M:%S")
     
-    header = f" {Colors.HEADER}{kiosk_type}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}ID: {Colors.CYAN}{kiosk_id}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}LOC: {Colors.CYAN}{location}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}TIME: {Colors.CYAN}{curr_time}{Colors.RESET}"
-    print("\n" + header)
+    header = f"{Colors.HEADER}{kiosk_type}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}ID: {Colors.CYAN}{kiosk_id}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}LOC: {Colors.CYAN}{location}{Colors.RESET} {Colors.DIM}|{Colors.RESET} {Colors.TEXT}TIME: {Colors.CYAN}{curr_time}{Colors.RESET}"
+    print("\n" + centerLine(header, width))
     try:
-        print(" " + Colors.DIM + "═"*75 + Colors.RESET + "\n")
+        print(centerLine(Colors.DIM + "═"*75 + Colors.RESET, width) + "\n")
     except UnicodeEncodeError:
-        print(" " + Colors.DIM + "="*75 + Colors.RESET + "\n")
+        print(centerLine(Colors.DIM + "="*75 + Colors.RESET, width) + "\n")
 
-def showProgress(message, duration=1.2):
-    """ List of characters that create the 'spinning' effect """
+def showProgress(message, task_func=None, duration=0.8, width=80):
+    """ Restored classic progress spinner with centering """
     spinner = ["|", "/", "-", "\\"]
     
-    end_time = time.time() + duration
     idx = 0
-    while time.time() < end_time:
-
-        """ Move to the beginning of the line each time """
-        print(f"\r {Colors.HEADER}{spinner[idx % len(spinner)]} {message}...", end="", flush=True)
+    start_time = time.time()
+    
+    result = None
+    if task_func:
+        # Run the actual task
+        result = task_func()
+    
+    # Ensure a minimum duration for visual impact
+    while time.time() - start_time < duration:
+        line = f"{Colors.HEADER}{spinner[idx % len(spinner)]}{Colors.RESET} {message}..."
+        print(f"\r{centerLine(line, width)}", end="", flush=True)
         time.sleep(0.08)
         idx += 1
     
-    """ Success message after check """
-    print(f"\r {Colors.SUCCESS}[OK] {message} Done!{Colors.RESET}")
+    success_line = f"{Colors.SUCCESS}[OK] {message} Done!{Colors.RESET}"
+    print(f"\r{centerLine(success_line, width)}")
+    return result
 
-def drawBox(title, lines):    
+def centerLine(text, width=80):
+    """ Helper to center text while ignoring ANSI color codes """
+    import re
+    plain = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])').sub('', text)
+    padding = max(0, (width - len(plain)) // 2)
+    return (" " * padding) + text
+
+def printLogo():
+    width = 80
+    lines = [
+        "█████  ██   ██ ██████   █████ ",
+        "██   ██ ██   ██ ██   ██ ██   ██",
+        "███████ ██   ██ ██████  ███████",
+        "██   ██ ██   ██ ██   ██ ██   ██",
+        "██   ██  █████  ██   ██ ██   ██"
+    ]
+    print(f"\n{Colors.CYAN}")
+    for line in lines:
+        print(centerLine(line, width))
+    print(f"{Colors.RESET}")
+
+
+
+def drawBox(title, lines, screen_width=80):    
     width = 60
+    indent = " " * ((screen_width - width) // 2)
 
     try:
         # Try printing with premium box characters
-        print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
-        print("║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
-        print("╠" + "═"*(width-2) + "╣")
+        print(indent + Colors.BLUE + "╔" + "═"*(width-2) + "╗")
+        print(indent + "║ " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print(indent + "╠" + "═"*(width-2) + "╣")
         for line in lines:
-            print("║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
-        print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
+            print(indent + "║ " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " ║")
+        print(indent + "╚" + "═"*(width-2) + "╝" + Colors.RESET)
     except UnicodeEncodeError:
         # Fallback for older terminals
-        print(Colors.BLUE + "+" + "-"*(width-2) + "+")
-        print("| " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " |")
-        print("+" + "-"*(width-2) + "+")
+        print(indent + Colors.BLUE + "+" + "-"*(width-2) + "+")
+        print(indent + "| " + Colors.HEADER + Colors.BOLD + title.center(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print(indent + "+" + "-"*(width-2) + "+")
         for line in lines:
-            print("| " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " |")
-        print("+" + "-"*(width-2) + "+" + Colors.RESET)
+            print(indent + "| " + Colors.TEXT + line.ljust(width-4) + Colors.RESET + Colors.BLUE + " |")
+        print(indent + "+" + "-"*(width-2) + "+" + Colors.RESET)
 
 """ Display the inventory from products """
 def strip_ansi(text):
@@ -118,24 +149,27 @@ def pad_ansi(text, width, align='left'):
         return (' ' * left) + text + (' ' * right)
     return text
 
-def displayInventory(products):
+def displayInventory(products, screen_width=80):
     """ 
-    Displays the state-of-the-art Aura Kiosk Dashboard with perfect alignment.
+    Displays the state-of-the-art Aura Kiosk Dashboard with perfect centering and alignment.
     """
     mapping = {}
     idx = 1
     
-    # Grid Config (Content Widths)
-    W_REF   = 5
-    W_NAME  = 30
-    W_VAL   = 12
-    W_STOCK = 38
+    # Adjusted Grid Config (Fits 80 chars with padding)
+    W_REF   = 4
+    W_NAME  = 25
+    W_VAL   = 10
+    W_STOCK = 32
+    
+    table_width = W_REF + W_NAME + W_VAL + W_STOCK + 5
+    indent = " " * ((screen_width - table_width) // 2)
     
     # Border Templates
-    top    = f" ╔{'═'*W_REF}╦{'═'*W_NAME}╦{'═'*W_VAL}╦{'═'*W_STOCK}╗"
-    header = f" ╠{'═'*W_REF}╬{'═'*W_NAME}╬{'═'*W_VAL}╬{'═'*W_STOCK}╣"
-    sep    = f" ╟{'─'*W_REF}╫{'─'*W_NAME}╫{'─'*W_VAL}╫{'─'*W_STOCK}╢"
-    bottom = f" ╚{'═'*W_REF}╩{'═'*W_NAME}╩{'═'*W_VAL}╩{'═'*W_STOCK}╝"
+    top    = f"{indent}╔{'═'*W_REF}╦{'═'*W_NAME}╦{'═'*W_VAL}╦{'═'*W_STOCK}╗"
+    header = f"{indent}╠{'═'*W_REF}╬{'═'*W_NAME}╬{'═'*W_VAL}╬{'═'*W_STOCK}╣"
+    sep    = f"{indent}╟{'─'*W_REF}╫{'─'*W_NAME}╫{'─'*W_VAL}╫{'─'*W_STOCK}╢"
+    bottom = f"{indent}╚{'═'*W_REF}╩{'═'*W_NAME}╩{'═'*W_VAL}╩{'═'*W_STOCK}╝"
 
     try:
        
@@ -146,7 +180,7 @@ def displayInventory(products):
         h_val   = pad_ansi(f"{Colors.CYAN}VALUATION", W_VAL, 'center')
         h_stock = pad_ansi(f"{Colors.CYAN}STOCK CAPACITY / STATUS", W_STOCK, 'center')
         
-        print(f" {Colors.BLUE}║{h_ref}{Colors.BLUE}║{h_name}{Colors.BLUE}║{h_val}{Colors.BLUE}║{h_stock}{Colors.BLUE}║")
+        print(f"{indent}{Colors.BLUE}║{h_ref}{Colors.BLUE}║{h_name}{Colors.BLUE}║{h_val}{Colors.BLUE}║{h_stock}{Colors.BLUE}║")
         print(Colors.BLUE + header)
         
         for name, prod in products.items():
@@ -163,10 +197,10 @@ def displayInventory(products):
             elif stock_val < 5:
                 stock_color, status_text = Colors.WARNING, "LOW   "
             
-            # Progress Bar (10 segments)
-            filled = min(10, int((stock_val / 20) * 10))
-            bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (10-filled)}{Colors.RESET}"
-            stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2} units{Colors.RESET}"
+            # Progress Bar (8 segments for smaller table)
+            filled = min(8, int((stock_val / 20) * 8))
+            bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8-filled)}{Colors.RESET}"
+            stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
             
             is_bundle = isinstance(prod, ProductBundle)
             display_name = name.upper()
@@ -179,12 +213,12 @@ def displayInventory(products):
                 item_text = f"{icon}{Colors.TEXT}{display_name}{Colors.RESET}"
             
             # Row Printing
-            c_ref   = pad_ansi(f"  {Colors.BOLD}{idx:<2}{Colors.RESET}", W_REF)
+            c_ref   = pad_ansi(f" {Colors.BOLD}{idx:<2}{Colors.RESET}", W_REF)
             c_name  = pad_ansi(f" {item_text}", W_NAME)
-            c_val   = pad_ansi(f" {Colors.TEXT}{price_str:>10} ", W_VAL)
+            c_val   = pad_ansi(f" {Colors.TEXT}{price_str:>8} ", W_VAL)
             c_stock = pad_ansi(f" {stock_status}", W_STOCK)
             
-            print(f" {Colors.BLUE}║{c_ref}{Colors.BLUE}║{c_name}{Colors.BLUE}║{c_val}{Colors.BLUE}║{c_stock}{Colors.BLUE}║")
+            print(f"{indent}{Colors.BLUE}║{c_ref}{Colors.BLUE}║{c_name}{Colors.BLUE}║{c_val}{Colors.BLUE}║{c_stock}{Colors.BLUE}║")
             
             # Bundle Tree
             if is_bundle:
@@ -196,7 +230,7 @@ def displayInventory(products):
                     t_ref  = pad_ansi("", W_REF)
                     t_val  = pad_ansi("", W_VAL)
                     t_stock = pad_ansi("", W_STOCK)
-                    print(f" {Colors.BLUE}║{t_ref}{Colors.BLUE}║{t_name}{Colors.BLUE}║{t_val}{Colors.BLUE}║{t_stock}{Colors.BLUE}║")
+                    print(f"{indent}{Colors.BLUE}║{t_ref}{Colors.BLUE}║{t_name}{Colors.BLUE}║{t_val}{Colors.BLUE}║{t_stock}{Colors.BLUE}║")
 
             if idx < len(products):
                 print(Colors.BLUE + sep)
@@ -218,21 +252,30 @@ def displayInventory(products):
         
 """ Show the user welcome screen """
 def welcomeScreen():
+    width = 80
     clearScreen()
-    drawBox("AURA RETAIL OS", [
-        "Starting System Boot...",
-        "Please wait while components initialize."
-    ])
-    print()
-    showProgress("Checking System Modules")
-    showProgress("Syncing Inventory DB")
-    showProgress("Checking Hardware (SpiralDispenser)")
-    showProgress("Activating Monitoring System (Observer)")
-    showProgress("Opening Secure Gateway")
+    printLogo()
     
+    print(centerLine(f"{Colors.BOLD}RETAIL OPERATING SYSTEM{Colors.RESET}", width))
+    print(centerLine(f"{Colors.DIM}v4.2.0-STABLE | BUILD 2024.04{Colors.RESET}", width))
+    print()
+    
+    print(centerLine(f"{Colors.CYAN}Welcome to the future of automated retail.{Colors.RESET}", width))
     time.sleep(0.5)
-    print(Colors.SUCCESS + "\n [BOOT SUCCESS] System is ready for use!" + Colors.RESET)
-    time.sleep(1)
+    
+    print("\n" + centerLine(f"{Colors.BOLD}PRESS ENTER TO INITIALIZE{Colors.RESET}", width))
+    input()
+
+    # Perform real tasks for common subsystems
+    print()
+    registry = showProgress("Initializing Central Registry", lambda: CentralRegistry(), duration=0.6, width=width)
+    inventory_real = showProgress("Mounting Secure Inventory Engine", lambda: InventorySystem(), duration=0.6, width=width)
+    monitor = showProgress("Activating Monitoring System", lambda: MonitoringSystem(), duration=0.6, width=width)
+    payment = showProgress("Initializing Payment Gateway API", lambda: PaymentSystem(), duration=0.6, width=width)
+    showProgress("Opening Secure Gateway", duration=0.6, width=width)
+    time.sleep(0.5)
+    
+    return registry, inventory_real, monitor, payment
 
 def paymentChoice():
     """ Gets payment choice using an easy-to-understand menu """
@@ -280,9 +323,9 @@ def purchaseFlow(interface, products):
 
     method = paymentChoice()
     clearScreen()
-    showProgress(f"Processing {method} Authorization")
     
     interface.purchaseItem(item, qty, method)
+    showProgress(f"Processing {method} Authorization")
     print(Colors.SUCCESS + f"\n [SUCCESS] {qty}x {name.title()} dispensed." + Colors.RESET)
     pauseScreen()
 
@@ -296,8 +339,8 @@ def refundFlow(interface):
         return
 
     method = paymentChoice()
-    showProgress("Contacting Bank for Refund")
     interface.refundTransaction(amount, method)
+    showProgress("Contacting Bank for Refund")
     print(Colors.SUCCESS + " [DONE] Amount has been reversed." + Colors.RESET)
     pauseScreen()
 
@@ -503,10 +546,11 @@ def hardwareSimulationMenu(core):
             break
 
 def runKiosk():
-    # --- BOOT SCREEN & FACTORY SELECTION ---
-    welcomeScreen()
+    # --- BOOT SCREEN & INITIALIZATION ---
+    registry, inventory_real, monitor, payment = welcomeScreen()
     
     clearScreen()
+    printLogo()
     drawBox("SYSTEM CONFIGURATION", [
         "Please select the Kiosk Application Type:",
         " [1]  Food & Beverage (Spiral Dispenser)",
@@ -532,80 +576,81 @@ def runKiosk():
     }
     inventory_file = inv_map.get(kiosk_type_label, "inventory_default.json")
     
-    # --- SUB-SYSTEM INITIALIZATION ---
-    # Step 1: Singleton Registry
-    registry = CentralRegistry()
-    
-    # Step 6: Persistence Initialization
-    inventory_real = InventorySystem()
-    
-    # Try to load from DB, fallback to factory defaults if empty
-    if not loadInventoryIntoSystem(inventory_real, inventory_file):
-        print(f"{Colors.WARNING} [INFO] Initializing factory data for {kiosk_type_label}...{Colors.RESET}")
-        
-        # Get factory data (NEW!)
-        data = factory.getDefaultInventory()
-        
-        # Load products from factory data
-        for k, p in data["products"].items():
-            inventory_real.addProduct(k, SimpleProduct(ProductModel(p["id"], p["name"], p["price"], p["stock"])))
-            
-        # Load bundles from factory data
-        for k, b in data["bundles"].items():
-            bundle = ProductBundle(b["name"], b["discount"])
-            for item_key in b["items"]:
-                prod = inventory_real.getProduct(item_key)
-                if prod: bundle.add(prod)
-            inventory_real.addProduct(k, bundle)
+    clearScreen()
+    printLogo()
+    print(f" {Colors.HEADER}❖ SYSTEM BOOT SEQUENCE - {kiosk_type_label.upper()}{Colors.RESET}")
+    print(f" {Colors.DIM}───────────────────────────────────────────────────────────{Colors.RESET}\n")
 
-        # Save the new database immediately
-        saveCurrentInventory(inventory_real._items, inventory_file)
-    else:
-        print(f"{Colors.SUCCESS} [DB] {kiosk_type_label} state restored from {inventory_file}.{Colors.RESET}")
+    # Step 6: Load Inventory Data
+    def load_logic():
+        if not loadInventoryIntoSystem(inventory_real, inventory_file):
+            data = factory.getDefaultInventory()
+            for k, p in data["products"].items():
+                inventory_real.addProduct(k, SimpleProduct(ProductModel(p["id"], p["name"], p["price"], p["stock"])))
+            for k, b in data["bundles"].items():
+                bundle = ProductBundle(b["name"], b["discount"])
+                for item_key in b["items"]:
+                    prod = inventory_real.getProduct(item_key)
+                    if prod: bundle.add(prod)
+                inventory_real.addProduct(k, bundle)
+            saveCurrentInventory(inventory_real._items, inventory_file)
+            return "FACTORY_INIT"
+        return "DATABASE_RESTORED"
 
-    # Step 4: Monitoring (Observer Pattern)
-    monitor = MonitoringSystem()
+    status = showProgress(f"Syncing Catalog DB ({inventory_file})", load_logic)
+    
+    # Step 4: Configure Monitoring
     monitor.subscribe("LOW_STOCK", lambda src, det: print(f"{Colors.ERROR}\n [ALERT] {det} (Triggered by {src}){Colors.RESET}"))
     
-    proxy = SecureInventoryProxy(
-        inventory_real, 
-        monitor=monitor, 
-        on_change=lambda: saveCurrentInventory(inventory_real._items, inventory_file)
+    proxy = showProgress("Establishing Secure Inventory Proxy", 
+        lambda: SecureInventoryProxy(
+            inventory_real, 
+            monitor=monitor, 
+            on_change=lambda: saveCurrentInventory(inventory_real._items, inventory_file)
+        )
     )
 
-    # Step 3: Hardware Bridge (PROVISIONED BY FACTORY)
-    dispenser = factory.createDispenser()
-    hardware = HardwareAbstraction(dispenser)
+    # Step 3: Hardware Bridge
+    dispenser = showProgress("Provisioning Dispenser Mechanism", lambda: factory.createDispenser())
+    hardware = showProgress("Bridging Hardware Abstraction Layer", lambda: HardwareAbstraction(dispenser))
 
     # Core System Assembly
-    payment = PaymentSystem()
-    core = KioskCoreSystem(
-        inventorySystem=proxy,
-        paymentSystem=payment,
-        hardwareSystem=hardware,
-        kioskType=kiosk_type_label
+    core = showProgress("Assembling Aura Core Kernel", 
+        lambda: KioskCoreSystem(
+            inventorySystem=proxy,
+            paymentSystem=payment,
+            hardwareSystem=hardware,
+            kioskType=kiosk_type_label
+        )
     )
 
     # Register this kiosk instance globally
-    registry.setConfig("KIOSK_ID", "AURA-001")
-    registry.setConfig("LOCATION", "Main Hall - Floor 1")
-    registry.setConfig("TYPE", kiosk_type_label)
-    registry.registerKiosk("AURA-001", core)
+    showProgress("Registering Kiosk Identity", 
+        lambda: (
+            registry.setConfig("KIOSK_ID", "AURA-001"),
+            registry.setConfig("LOCATION", "Main Hall - Floor 1"),
+            registry.setConfig("TYPE", kiosk_type_label),
+            registry.registerKiosk("AURA-001", core)
+        )
+    )
 
     # --- RESTORE PERSISTENT HARDWARE MODULES ---
-    saved_modules = registry.getConfig("ACTIVE_MODULES") or []
-    if saved_modules:
-        print(f"{Colors.CYAN} [BOOT] Restoring {len(saved_modules)} hardware extensions...{Colors.RESET}")
+    def restore_modules():
+        saved_modules = registry.getConfig("ACTIVE_MODULES") or []
         for mod_name in saved_modules:
             if mod_name == "refrigeration": core.attachModule(RefrigerationUnit(core.top_module))
             elif mod_name == "solar": core.attachModule(SolarModule(core.top_module))
             elif mod_name == "network": core.attachModule(NetworkModule(core.top_module))
+        return len(saved_modules)
+
+    mod_count = showProgress("Restoring Hardware Extension Modules", restore_modules)
 
     # 5. Initialize Interface (Facade)
-    interface = KioskInterface(core)
+    interface = showProgress("Launching Kiosk Interface Facade", lambda: KioskInterface(core))
     inventory_items = inventory_real._items 
 
-    # Removed second welcomeScreen call
+    print(f"\n {Colors.SUCCESS}███ BOOT SUCCESSFUL ███{Colors.RESET}")
+    time.sleep(1)
 
     while True:
         clearScreen()
@@ -615,9 +660,8 @@ def runKiosk():
             " [1]  Quick Purchase",
             " [2]  Process Refund",
             " [3]  System Diagnostics",
-            " [4]  Admin Terminal (Restricted)",
-            " [5]  Hardware Simulation (Technical)",
-            " [6]  Power Down System"
+            " [4]  Management Console (Restricted)",
+            " [5]  Power Down System"
         ])
         
         print(f"\n {Colors.CYAN}Selection{Colors.RESET} {Colors.DIM}>>{Colors.RESET} ", end="")
@@ -630,20 +674,32 @@ def runKiosk():
         elif choice == "3":
             diagnosticsFlow(core)
         elif choice == "4":
-            pin = input(f"\n {Colors.WARNING} Enter ADMIN PIN:{Colors.RESET} ").strip()
-            if pin == "1234":
-                adminFlow(
-                    inventory_real, 
-                    registry, 
-                    interface, 
-                    save_callback=lambda: saveCurrentInventory(inventory_items, inventory_file)
-                )
-            else:
-                print(f" {Colors.ERROR} Access Denied.{Colors.RESET}")
-                time.sleep(1)
+            clearScreen()
+            drawBox("SECURE OPERATIONS HUB", [
+                "Select Authorization Node:",
+                " [1]  Inventory & Asset Control",
+                " [2]  Hardware Abstraction Node",
+                " [3]  Exit Secure Shell"
+            ])
+            sub_choice = input(f"\n {Colors.CYAN}Access Level >> {Colors.RESET}").strip()
+            
+            if sub_choice == "1":
+                pin = input(f"\n {Colors.WARNING} Enter ADMIN PIN:{Colors.RESET} ").strip()
+                if pin == "1234":
+                    adminFlow(
+                        inventory_real, 
+                        registry, 
+                        interface, 
+                        save_callback=lambda: saveCurrentInventory(inventory_items, inventory_file)
+                    )
+                else:
+                    print(f" {Colors.ERROR} Access Denied.{Colors.RESET}")
+                    time.sleep(1)
+            elif sub_choice == "2":
+                hardwareSimulationMenu(core)
+            elif sub_choice == "3":
+                continue
         elif choice == "5":
-            hardwareSimulationMenu(core)
-        elif choice == "6":
             clearScreen()
             drawBox("SHUTDOWN SEQUENCE", [
                 "Cleaning up subsystems...",

@@ -13,6 +13,9 @@ from persistence.persistenceLayer import PersistentLayer
 from monitoring.monitoring_system import MonitoringSystem
 
 
+from utils.colors import Colors
+import time
+
 class PaymentSystem:
 
     def __init__(self):
@@ -29,12 +32,13 @@ class PaymentSystem:
     # ---------------- PAYMENT ---------------- #
 
     def makePayment(self, method, amount, product_name=None, quantity=None, kiosk_type="UNKNOWN"):
-        print("\n[PaymentSystem] Starting payment...")
+        print(f"\n{Colors.WARNING}[PaymentSystem]{Colors.RESET} Starting payment...")
+        time.sleep(0.4)
 
         processor = self._getProcessor(method)
 
         if processor is None:
-            print("[PaymentSystem] Invalid payment method")
+            print(f"{Colors.ERROR}[PaymentSystem] Invalid payment method{Colors.RESET}")
             return False
 
         # Process payment using adapter
@@ -63,19 +67,22 @@ class PaymentSystem:
                 f"Rs.{amount} via {method}"
             )
 
-            print("[PaymentSystem] Transaction recorded successfully.")
+            print(f"{Colors.SUCCESS}[PaymentSystem] Transaction recorded successfully.{Colors.RESET}")
+            time.sleep(0.3)
 
-        print("[PaymentSystem] Payment completed")
+        print(f"{Colors.WARNING}[PaymentSystem]{Colors.RESET} Payment completed")
+        time.sleep(0.3)
         return result
 
     # ---------------- REFUND ---------------- #
 
     def refund(self, method):
-        print("\n[PaymentSystem] Starting refund...")
+        print(f"\n{Colors.WARNING}[PaymentSystem]{Colors.RESET} Starting refund...")
+        time.sleep(0.4)
 
         # No transactions
         if not self.transactionHistory:
-            print("[PaymentSystem] No transactions available for refund")
+            print(f"{Colors.ERROR}[PaymentSystem] No transactions available for refund{Colors.RESET}")
             return False
 
         # Get last transaction
@@ -83,18 +90,19 @@ class PaymentSystem:
 
         # Prevent double refund
         if last_transaction.status == "REFUNDED":
-            print("[PaymentSystem] Last transaction already refunded")
+            print(f"{Colors.ERROR}[PaymentSystem] Last transaction already refunded{Colors.RESET}")
             return False
 
         processor = self._getProcessor(method)
 
         if processor is None:
-            print("[PaymentSystem] Invalid payment method")
+            print(f"{Colors.ERROR}[PaymentSystem] Invalid payment method{Colors.RESET}")
             return False
 
         amount = last_transaction.total_amount
 
-        print(f"[PaymentSystem] Refunding Rs.{amount} for {last_transaction.product_name}")
+        print(f"{Colors.WARNING}[PaymentSystem]{Colors.RESET} Refunding {Colors.BOLD}Rs.{amount}{Colors.RESET} for {Colors.CYAN}{last_transaction.product_name}{Colors.RESET}")
+        time.sleep(0.3)
 
         result = processor.refundPayment(amount)
 
@@ -112,9 +120,11 @@ class PaymentSystem:
                 f"Rs.{amount} refunded via {method}"
             )
 
-            print("[PaymentSystem] Refund successful")
+            print(f"{Colors.SUCCESS}[PaymentSystem] Refund successful{Colors.RESET}")
+            time.sleep(0.3)
 
-        print("[PaymentSystem] Refund completed")
+        print(f"{Colors.WARNING}[PaymentSystem]{Colors.RESET} Refund completed")
+        time.sleep(0.3)
         return result
 
     # ---------------- HELPER ---------------- #

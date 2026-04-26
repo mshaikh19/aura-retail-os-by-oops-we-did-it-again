@@ -1,3 +1,6 @@
+from utils.colors import Colors
+import time
+
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
         #creating subsystems 
@@ -16,7 +19,8 @@ class KioskCoreSystem:
     def attachModule(self, module):
         """ Attaches a HardwareModule (Decorator) to the system """
         self.top_module = module
-        print(f"[CORE] Module attached: {type(module).__name__}")
+        print(f"{Colors.HEADER}[CORE]{Colors.RESET} Module attached: {Colors.CYAN}{type(module).__name__}{Colors.RESET}")
+        time.sleep(0.3)
         self.top_module.activate()
 
     def getModuleStatuses(self):
@@ -39,13 +43,13 @@ class KioskCoreSystem:
         # Structure the data into logical groups
         report = {
             "CORE": {
-                "System Status": self.systemStatus,
-                "Kiosk Type": self.kioskType,
-                "Command Logs": f"{len(self.commandHistory)} executed"
+                "AuraCore Integrity": self.systemStatus,
+                "Kiosk Personality": self.kioskType,
+                "Activity Ledger": f"{len(self.commandHistory)} entries"
             },
             "HARDWARE": {
-                "Dispenser": hw_data.get("dispenser", "OFFLINE"),
-                "Motor Module": "RUNNING" if hw_data.get("motorRunning") else "IDLE"
+                "Dispensing Node": hw_data.get("dispenser", "OFFLINE"),
+                "Kiosk Motor Module": "RUNNING" if hw_data.get("motorRunning") else "IDLE"
             },
             "EXTENSIONS": self.getModuleStatuses()
         }
@@ -55,20 +59,21 @@ class KioskCoreSystem:
 
         # 1. Validate command object
         if command is None:
-            print("[CORE] Invalid command.")
+            print(f"{Colors.ERROR}[CORE] Invalid command.{Colors.RESET}")
             return False
 
         if not hasattr(command, "execute"):
-            print("[CORE] Command does not implement execute().")
+            print(f"{Colors.ERROR}[CORE] Command does not implement execute().{Colors.RESET}")
             return False
 
         # 2. Check system status
         if not self.checkSystemStatus():
-            print("[CORE] System not ready. Cannot execute command.")
+            print(f"{Colors.ERROR}[CORE] System not ready. Cannot execute command.{Colors.RESET}")
             return False
 
         try:
-            print(f"\n[CORE] Executing {command.__class__.__name__}...")
+            print(f"{Colors.HEADER}[CORE]{Colors.RESET} Executing {Colors.BOLD}{command.__class__.__name__}{Colors.RESET}...")
+            time.sleep(0.3)
 
             # 3. Execute command
             result = command.execute(self)
@@ -76,22 +81,23 @@ class KioskCoreSystem:
             # 4. Save history
             self.commandHistory.append(command)
 
-            print("[CORE] Command executed successfully.")
+            print(f"{Colors.SUCCESS}[CORE] Command executed successfully.{Colors.RESET}")
+            time.sleep(0.3)
             return True
 
         except Exception as e:
-            print(f"[CORE ERROR] {str(e)}")
+            print(f"{Colors.ERROR}[CORE ERROR] {str(e)}{Colors.RESET}")
             self.systemStatus = "ERROR"
             return False
 
     def checkSystemStatus(self):
 
         if self.systemStatus == "ERROR":
-            print("[CORE] System in ERROR state.")
+            print(f"{Colors.ERROR}[CORE] System in ERROR state.{Colors.RESET}")
             return False
 
         if self.systemStatus == "EMERGENCY":
-            print("[CORE] Emergency mode active. Limited operations.")
+            print(f"{Colors.WARNING}[CORE] Emergency mode active. Limited operations.{Colors.RESET}")
             return True
 
         return True
@@ -102,12 +108,12 @@ class KioskCoreSystem:
 
         if status in validStates:
             self.systemStatus = status
-            print(f"[CORE] System status changed to {status}")
+            print(f"{Colors.HEADER}[CORE]{Colors.RESET} System status changed to {Colors.BOLD}{status}{Colors.RESET}")
         else:
-            print("[CORE] Invalid system status.")
+            print(f"{Colors.ERROR}[CORE] Invalid system status.{Colors.RESET}")
 
     def getSystemStatus(self):
         return self.systemStatus
 
     def getCommandHistory(self):
-        return self.commandHistory
+        return self.commandHistory
