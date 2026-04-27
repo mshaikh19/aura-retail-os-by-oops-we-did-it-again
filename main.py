@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import io
 # Force UTF-8 encoding for premium UI rendering on Windows
 if sys.stdout.encoding != 'utf-8':
@@ -316,6 +316,14 @@ def purchaseFlow(interface, products):
         pauseScreen()
         return
 
+    # Emergency Mode: restrict single transaction to max 2 units
+    from registry.central_registry import CentralRegistry
+    if CentralRegistry().getConfig("EMERGENCY_MODE"):
+        if qty > 2:
+            print(Colors.WARNING + " ! EMERGENCY MODE: Purchase limit is 2 units per transaction." + Colors.RESET)
+            pauseScreen()
+            return
+
     if qty > item.getAvailableStock():
         print(Colors.ERROR + " ! Not enough stock available." + Colors.RESET)
         pauseScreen()
@@ -530,8 +538,9 @@ def hardwareSimulationMenu(core):
             " [2]  Deploy Solar Power Panels",
             " [3]  Initialize 5G Network Uplink",
             " [4]  Hot-Swap Dispenser Mechanism",
-            " [5]  Decommission All Extensions",
-            " [6]  Return to Primary Shell"
+            " [5]  Toggle Product Slot Jam",
+            " [6]  Decommission All Extensions",
+            " [7]  Return to Primary Shell"
         ])
         
         choice = input(f"\n {Colors.CYAN}Technician >> {Colors.RESET}").strip()
@@ -564,11 +573,28 @@ def hardwareSimulationMenu(core):
                 proxy.swapDispenser(ConveyorDispenser())
             time.sleep(1)
         elif choice == "5":
+            clearScreen()
+            print(f"\n {Colors.HEADER}❖ JAM SIMULATION MODULE{Colors.RESET}")
+            inventory_items = core.inventorySystem._inventory_system._items
+            mapping = {}
+            lines = []
+            for i, name in enumerate(inventory_items.keys(), 1):
+                mapping[str(i)] = name
+                status = "JAMMED" if core.hardwareSystem.isProductJammed(name) else "CLEAR"
+                lines.append(f" [{i}] {name.upper():<20} | {status}")
+            
+            drawBox("SELECT SLOT TO TOGGLE", lines)
+            j_choice = input(f"\n {Colors.CYAN}Toggle Slot # >> {Colors.RESET}").strip()
+            if j_choice in mapping:
+                core.hardwareSystem.toggleProductJam(mapping[j_choice])
+                time.sleep(1)
+        elif choice == "6":
             proxy.clearExtensions()
             save_hw_config()
             time.sleep(1)
-        elif choice == "6":
+        elif choice == "7":
             break
+
 
 def runKiosk():
     # --- BOOT SCREEN & INITIALIZATION ---
@@ -638,6 +664,8 @@ def runKiosk():
     # Step 3: Hardware Bridge
     dispenser = showProgress("Provisioning Dispenser Mechanism", lambda: factory.createDispenser())
     hardware = showProgress("Bridging Hardware Abstraction Layer", lambda: HardwareAbstraction(dispenser))
+    registry.registerHardware(hardware)
+
 
     # Core System Assembly
     core = showProgress("Assembling Aura Core Kernel", 

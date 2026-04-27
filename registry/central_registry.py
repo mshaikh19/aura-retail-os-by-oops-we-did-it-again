@@ -1,4 +1,5 @@
 from utils.colors import Colors
+from inventory.pricing.pricing_policy import StandardPricingPolicy, EmergencyPricingPolicy
 
 class CentralRegistry:
     """
@@ -10,10 +11,21 @@ class CentralRegistry:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._config = {}
+            cls._instance._config = {
+                'pricing_policy': StandardPricingPolicy()
+            }
             cls._instance._kiosks = {}
-            print(f" {Colors.HEADER}◈ {Colors.BOLD}REGISTRY:{Colors.RESET} {Colors.TEXT}Singleton instance established.{Colors.RESET}")
+            cls._instance._hardware = None
+            print(f" {Colors.HEADER}* {Colors.BOLD}REGISTRY:{Colors.RESET} {Colors.TEXT}Singleton instance established.{Colors.RESET}")
         return cls._instance
+
+    def registerHardware(self, hardware_ref):
+        self._hardware = hardware_ref
+        print(f"[REGISTRY] Hardware registered.")
+
+    def getHardware(self):
+        return self._hardware
+
 
     def registerKiosk(self, kiosk_id, kiosk_ref):
         self._kiosks[kiosk_id] = kiosk_ref
@@ -30,3 +42,12 @@ class CentralRegistry:
 
     def getConfig(self, key):
         return self._config.get(key)
+
+    def setPricingPolicy(self, policy):
+        self._config['pricing_policy'] = policy
+        print(f"[REGISTRY] Pricing policy updated to: {type(policy).__name__}")
+
+    def getPricingPolicy(self):
+        if self.getConfig("EMERGENCY_MODE"):
+            return EmergencyPricingPolicy()
+        return self._config.get('pricing_policy', StandardPricingPolicy())

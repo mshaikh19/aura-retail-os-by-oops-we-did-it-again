@@ -58,3 +58,16 @@ class HardwareAbstraction:
             "dispenser": self._dispenser.getStatus(),
             "motorRunning": self._sensorMotor.isMotorRunning()
         }
+
+    def isProductJammed(self, product_name: str) -> bool:
+        """
+        Checks if the specific dispenser slot for a product is jammed
+        """
+        return self._dispenser.isSlotJammed(product_name)
+
+    def toggleProductJam(self, product_name: str):
+        """
+        Toggles jam status for a product slot (for simulation)
+        """
+        if hasattr(self._dispenser, 'toggleJam'):
+            self._dispenser.toggleJam(product_name)

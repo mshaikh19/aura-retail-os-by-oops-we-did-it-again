@@ -30,3 +30,10 @@ class DispenserInterface(ABC):
         Returns current status of dispenser.
         """
         pass
+
+    @abstractmethod
+    def isSlotJammed(self, product_name: str) -> bool:
+        """
+        Returns True if the specific slot for a product is jammed.
+        """
+        pass
