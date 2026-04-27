@@ -16,6 +16,14 @@ class CentralRegistry:
             }
             cls._instance._kiosks = {}
             cls._instance._hardware = None
+            
+            # Machine Presets
+            cls._instance.PRESETS = {
+                "1": {"label": "Aura Food & Beverage Kiosk", "inventory": "inventory_food.json"},
+                "2": {"label": "Aura Medical Pharmacy Kiosk", "inventory": "inventory_pharmacy.json"},
+                "3": {"label": "Aura Cyber-Tech Hub", "inventory": "inventory_tech.json"}
+            }
+
             print(f" {Colors.HEADER}* {Colors.BOLD}REGISTRY:{Colors.RESET} {Colors.TEXT}Singleton instance established.{Colors.RESET}")
         return cls._instance
 
