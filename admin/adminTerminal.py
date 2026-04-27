@@ -1,4 +1,4 @@
-import time
+﻿import time
 from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
@@ -33,14 +33,16 @@ def adminFlow(inventory_real, registry, interface, save_callback):
     while True:
         clearScreen()
         print(f"\n {Colors.HEADER}{Colors.BOLD} AURA OS | {kiosk_type.upper()} ADMIN{Colors.RESET}")
-        print(f" {Colors.DIM}─" + "─"*58 + Colors.RESET)
-        
-        # Dashboard Overview
+        print(f" {Colors.DIM}" + "-"*58 + Colors.RESET)
         items = inventory_real._items
         total_items = len([i for i in items.values() if isinstance(i, SimpleProduct)])
         low_stock = len([i for i in items.values() if isinstance(i, SimpleProduct) and i.getAvailableStock() < 5])
         
-        print(f" {Colors.CYAN}SYSTEM STATUS:{Colors.RESET} {Colors.SUCCESS}ONLINE{Colors.RESET} | "
+        core = registry.getKiosk("AURA-001")
+        sys_status = core.getSystemStatus()
+        status_color = Colors.SUCCESS if sys_status == "ACTIVE" else (Colors.WARNING if sys_status == "EMERGENCY" else Colors.ERROR)
+
+        print(f" {Colors.CYAN}SYSTEM STATUS:{Colors.RESET} {status_color}{sys_status}{Colors.RESET} | "
               f"{Colors.CYAN}PRODUCTS:{Colors.RESET} {total_items} | "
               f"{Colors.CYAN}CRITICAL STOCK:{Colors.RESET} {Colors.ERROR if low_stock > 0 else Colors.SUCCESS}{low_stock}{Colors.RESET}")
         
@@ -56,7 +58,8 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             " [2]  Inventory Health & Restock",
             " [3]  Price & Discount Configuration",
             " [4]  System Deep-Scan Audit",
-            " [5] Exit Management Shell"
+            " [5]  Toggle EMERGENCY Mode",
+            " [6] Exit Management Shell"
         ])
         
         print(f"\n {Colors.CYAN}Command{Colors.RESET} {Colors.DIM}>>{Colors.RESET} ", end="")
@@ -145,10 +148,21 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             except: pass
 
         elif choice == "4":
-            registry.getKiosk("AURA-001").executeCommand(None) # Generic ping
+            core.executeCommand(None) # Generic ping
             # In a real app, this would call core diagnostics
             print(f" {Colors.SUCCESS} Audit Complete. All subsystems nominal.{Colors.RESET}")
             time.sleep(1.5)
             
         elif choice == "5":
+            if core.getSystemStatus() == "EMERGENCY":
+                core.setSystemStatus("ACTIVE")
+                registry.setConfig("EMERGENCY_MODE", False)
+                print(f" {Colors.SUCCESS} Emergency Mode DEACTIVATED.{Colors.RESET}")
+            else:
+                core.setSystemStatus("EMERGENCY")
+                registry.setConfig("EMERGENCY_MODE", True)
+                print(f" {Colors.WARNING} Emergency Mode ACTIVATED.{Colors.RESET}")
+            time.sleep(1.5)
+
+        elif choice == "6":
             break

@@ -12,7 +12,12 @@ class SimpleProduct(InventoryComponent):
         return self.model.stock
 
     def getAvailableStock(self):
+        from registry.central_registry import CentralRegistry
+        hw = CentralRegistry().getHardware()
+        if hw and hw.isProductJammed(self.getName()):
+            return 0
         return self.model.stock
+
 
     def isAvailable(self):
         return self.model.stock > 0
@@ -33,7 +38,10 @@ class SimpleProduct(InventoryComponent):
         self.model.stock += qty
 
     def getPrice(self):
-        return self.model.price
+        from registry.central_registry import CentralRegistry
+        registry = CentralRegistry()
+        policy = registry.getPricingPolicy()
+        return policy.calculatePrice(self.model.price)
 
     def getName(self):
         return self.model.name
