@@ -600,29 +600,16 @@ def runKiosk():
     # --- BOOT SCREEN & INITIALIZATION ---
     registry, inventory_real, monitor, payment = welcomeScreen()
     
-    # Load Persistent Configuration
-    config = PersistentLayer.loadConfig()
-    f_choice = config.get("KIOSK_PRESET")
-
-    if not f_choice:
-        clearScreen()
-        printLogo()
-        drawBox("SYSTEM CONFIGURATION", [
-            "Please select the Kiosk Application Type:",
-            " [1]  Food & Beverage (Spiral Dispenser)",
-            " [2]  Medical Pharmacy (Robotic Arm)",
-            " [3]  Cyber-Tech Gear (Conveyor Belt)"
-        ])
-        
-        f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
-        
-        # Save config for future boots
-        config["KIOSK_PRESET"] = f_choice
-        PersistentLayer.saveConfig(config)
+    clearScreen()
+    printLogo()
+    drawBox("SYSTEM CONFIGURATION", [
+        "Please select the Kiosk Application Type:",
+        " [1]  Food & Beverage (Spiral Dispenser)",
+        " [2]  Medical Pharmacy (Robotic Arm)",
+        " [3]  Cyber-Tech Gear (Conveyor Belt)"
+    ])
     
-    # Apply Preset from Registry
-    preset = registry.PRESETS.get(f_choice, registry.PRESETS["1"])
-    
+    f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
     if f_choice == "2":
         factory = PharmacyKioskFactory()
     elif f_choice == "3":
@@ -630,9 +617,15 @@ def runKiosk():
     else:
         factory = FoodKioskFactory()
         
-    kiosk_type_label = preset["label"]
+    kiosk_type_label = factory.getKioskType()
     
-    inventory_file = preset["inventory"]
+    # Map kiosk type to specific inventory file
+    inv_map = {
+        "Aura Food & Beverage Kiosk": "inventory_food.json",
+        "Aura Medical Pharmacy Kiosk": "inventory_pharmacy.json",
+        "Aura Cyber-Tech Hub": "inventory_tech.json"
+    }
+    inventory_file = inv_map.get(kiosk_type_label, "inventory_default.json")
     
     clearScreen()
     printLogo()
