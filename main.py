@@ -265,17 +265,7 @@ def welcomeScreen():
     
     print("\n" + centerLine(f"{Colors.BOLD}PRESS ENTER TO INITIALIZE{Colors.RESET}", width))
     input()
-
-    # Perform real tasks for common subsystems
-    print()
-    registry = showProgress("Initializing Central Registry", lambda: CentralRegistry(), duration=0.6, width=width)
-    inventory_real = showProgress("Mounting Secure Inventory Engine", lambda: InventorySystem(), duration=0.6, width=width)
-    monitor = showProgress("Activating Monitoring System", lambda: MonitoringSystem(), duration=0.6, width=width)
-    payment = showProgress("Initializing Payment Gateway API", lambda: PaymentSystem(), duration=0.6, width=width)
-    showProgress("Opening Secure Gateway", duration=0.6, width=width)
-    time.sleep(0.5)
-    
-    return registry, inventory_real, monitor, payment
+    return True
 
 def paymentChoice():
     """ Gets payment choice using an easy-to-understand menu """
@@ -599,36 +589,50 @@ def hardwareSimulationMenu(core):
 
 
 def runKiosk():
-    # --- BOOT SCREEN & INITIALIZATION ---
-    registry, inventory_real, monitor, payment = welcomeScreen()
+    # --- PHASE 1: CORE SYSTEM INITIALIZATION ---
+    welcomeScreen()
+    width = 80
     
-    # Step 0: Load Persistence Config for Presets
+    # Generic Core Registry (No kiosk data yet)
+    registry = showProgress("Initializing Central Registry", lambda: CentralRegistry(), 0.6, width)
+    monitor = showProgress("Activating Monitoring System", lambda: MonitoringSystem(), 0.6, width)
+    payment = showProgress("Initializing Payment Gateway API", lambda: PaymentSystem(), 0.6, width)
+    
+    # --- PHASE 2: KIOSK IDENTITY SELECTION ---
     config = PersistentLayer.loadConfig()
-    f_choice = config.get("KIOSK_PRESET")
-
-    if not f_choice:
-        clearScreen()
-        printLogo()
-        drawBox("SYSTEM CONFIGURATION", [
-            "Please select the Kiosk Application Type:",
-            " [1]  Food & Beverage (Spiral Dispenser)",
-            " [2]  Medical Pharmacy (Robotic Arm)",
-            " [3]  Cyber-Tech Gear (Conveyor Belt)"
-        ])
-        
-        f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
-        
-        # Save selection for next boot
-        config["KIOSK_PRESET"] = f_choice
-        PersistentLayer.saveConfig(config)
     
+    clearScreen()
+    printLogo()
+    drawBox("SYSTEM CONFIGURATION", [
+        "Please select the Kiosk Application Type:",
+        " [1]  Food & Beverage (Spiral Dispenser)",
+        " [2]  Medical Pharmacy (Robotic Arm)",
+        " [3]  Cyber-Tech Gear (Conveyor Belt)"
+    ])
+    
+    f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
+    
+    # Save selection for record
+    config["KIOSK_PRESET"] = f_choice
+    PersistentLayer.saveConfig(config)
+    
+    # Factory Selection
     if f_choice == "2":
         factory = PharmacyKioskFactory()
     elif f_choice == "3":
         factory = TechGearFactory()
     else:
         factory = FoodKioskFactory()
-        
+
+    # --- PHASE 3: KIOSK-SPECIFIC CONFIGURATION ---
+    # Now merge the saved settings into the registry
+    for key, value in config.items():
+        registry.setConfig(key, value)
+
+    inventory_real = showProgress("Mounting Secure Inventory Engine", lambda: InventorySystem(), 0.6, width)
+    showProgress("Opening Secure Gateway", None, 0.6, width)
+    
+    # Rest of the boot logic continues as normal...
     kiosk_type_label = factory.getKioskType()
     
     # Map kiosk type to specific inventory file
@@ -660,7 +664,7 @@ def runKiosk():
             return "FACTORY_INIT"
         return "DATABASE_RESTORED"
 
-    status = showProgress(f"Syncing Catalog DB ({inventory_file})", load_logic)
+    status = showProgress(f"Syncing Catalog DB ({inventory_file})", load_logic, 0.6, 80)
     
     # Step 4: Configure Monitoring
     monitor.subscribe("LOW_STOCK", lambda src, det: print(f"{Colors.ERROR}\n [ALERT] {det} (Triggered by {src}){Colors.RESET}"))
@@ -670,12 +674,13 @@ def runKiosk():
             inventory_real, 
             monitor=monitor, 
             on_change=lambda: saveCurrentInventory(inventory_real._items, inventory_file)
-        )
+        ),
+        0.6, 80
     )
 
     # Step 3: Hardware Bridge
-    dispenser = showProgress("Provisioning Dispenser Mechanism", lambda: factory.createDispenser())
-    hardware = showProgress("Bridging Hardware Abstraction Layer", lambda: HardwareAbstraction(dispenser))
+    dispenser = showProgress("Provisioning Dispenser Mechanism", lambda: factory.createDispenser(), 0.6, 80)
+    hardware = showProgress("Bridging Hardware Abstraction Layer", lambda: HardwareAbstraction(dispenser), 0.6, 80)
     registry.registerHardware(hardware)
 
 
@@ -686,7 +691,8 @@ def runKiosk():
             paymentSystem=payment,
             hardwareSystem=hardware,
             kioskType=kiosk_type_label
-        )
+        ),
+        0.6, 80
     )
 
     # Register this kiosk instance globally
@@ -696,7 +702,8 @@ def runKiosk():
             registry.setConfig("LOCATION", "Main Hall - Floor 1"),
             registry.setConfig("TYPE", kiosk_type_label),
             registry.registerKiosk("AURA-001", core)
-        )
+        ),
+        0.6, 80
     )
 
     # Step 7: Initialize Session
@@ -711,7 +718,7 @@ def runKiosk():
             elif mod_name == "network": core.attachModule(NetworkModule(core.top_module))
         return len(saved_modules)
 
-    mod_count = showProgress("Restoring Hardware Extension Modules", restore_modules)
+    mod_count = showProgress("Restoring Hardware Extension Modules", restore_modules, 0.6, 80)
 
     # 5. Initialize Interface (Facade)
     interface = showProgress("Launching Kiosk Interface Facade", lambda: KioskInterface(core))
