@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import io
 # Force UTF-8 encoding for premium UI rendering on Windows
 if sys.stdout.encoding != 'utf-8':

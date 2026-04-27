@@ -1,4 +1,4 @@
-﻿import time
+import time
 from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
