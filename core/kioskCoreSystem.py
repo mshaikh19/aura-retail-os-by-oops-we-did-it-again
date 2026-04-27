@@ -92,7 +92,6 @@ class KioskCoreSystem:
 
         except Exception as e:
             print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} {str(e)}")
-            self.systemStatus = "ERROR"
             return False
 
     def checkSystemStatus(self):

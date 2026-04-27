@@ -41,6 +41,12 @@ class PurchaseCommand(Command):
         if core.paymentSystem is None:
             raise Exception("Payment system unavailable")
 
+        # ---------------- PAYMENT NETWORK CHECK ---------------- #
+        if self.paymentMethod in ["UPI", "CARD"]:
+            active_modules = core.getActiveModuleNames()
+            if "network" not in active_modules:
+                raise Exception(f"{self.paymentMethod} payment requires NETWORK module (5G Uplink)")
+
         # ---------------- PAYMENT ---------------- #
 
         transaction = core.paymentSystem.makePayment(

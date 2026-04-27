@@ -59,7 +59,8 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             " [3]  Price & Discount Configuration",
             " [4]  System Deep-Scan Audit",
             " [5]  Toggle EMERGENCY Mode",
-            " [6] Exit Management Shell"
+            " [6]  Maintenance: Reset System/Preset",
+            " [7]  Exit Management Shell"
         ])
         
         print(f"\n {Colors.CYAN}Command{Colors.RESET} {Colors.DIM}>>{Colors.RESET} ", end="")
@@ -165,4 +166,25 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             time.sleep(1.5)
 
         elif choice == "6":
+            clearScreen()
+            drawBox("MAINTENANCE OPERATIONS", [
+                " [1]  Reset System Status to ACTIVE (Clear Errors)",
+                " [2]  Wipe Kiosk Preset (Force Re-select on Boot)",
+                " [3]  Back"
+            ])
+            m_choice = input(f"\n {Colors.CYAN}Selection >> {Colors.RESET}").strip()
+            if m_choice == "1":
+                core.setSystemStatus("ACTIVE")
+                print(f" {Colors.SUCCESS} System status reset to ACTIVE.{Colors.RESET}")
+            elif m_choice == "2":
+                config = PersistentLayer.loadConfig()
+                if "KIOSK_PRESET" in config:
+                    del config["KIOSK_PRESET"]
+                    PersistentLayer.saveConfig(config)
+                    print(f" {Colors.SUCCESS} Preset wiped. Restart app to reconfigure.{Colors.RESET}")
+                else:
+                    print(f" {Colors.DIM} No preset found to wipe.{Colors.RESET}")
+            time.sleep(1.5)
+
+        elif choice == "7":
             break
