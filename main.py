@@ -444,7 +444,8 @@ def saveCurrentInventory(inventory_items, filename="inventory.json"):
                 "product_id": item.model.product_id,
                 "name": item.model.name,
                 "price": item.model.price,
-                "stock": item.model.stock
+                "stock": item.model.stock,
+                "required_module": getattr(item.model, "required_module", None)
             }
         elif isinstance(item, ProductBundle):
             item_keys = []
@@ -473,7 +474,8 @@ def loadInventoryIntoSystem(inventory_system, filename="inventory.json"):
             details['product_id'], 
             details['name'], 
             details['price'], 
-            details['stock']
+            details['stock'],
+            required_module=details.get('required_module')
         )
         inventory_system.addProduct(name, SimpleProduct(model))
     
@@ -600,16 +602,26 @@ def runKiosk():
     # --- BOOT SCREEN & INITIALIZATION ---
     registry, inventory_real, monitor, payment = welcomeScreen()
     
-    clearScreen()
-    printLogo()
-    drawBox("SYSTEM CONFIGURATION", [
-        "Please select the Kiosk Application Type:",
-        " [1]  Food & Beverage (Spiral Dispenser)",
-        " [2]  Medical Pharmacy (Robotic Arm)",
-        " [3]  Cyber-Tech Gear (Conveyor Belt)"
-    ])
+    # Step 0: Load Persistence Config for Presets
+    config = PersistentLayer.loadConfig()
+    f_choice = config.get("KIOSK_PRESET")
+
+    if not f_choice:
+        clearScreen()
+        printLogo()
+        drawBox("SYSTEM CONFIGURATION", [
+            "Please select the Kiosk Application Type:",
+            " [1]  Food & Beverage (Spiral Dispenser)",
+            " [2]  Medical Pharmacy (Robotic Arm)",
+            " [3]  Cyber-Tech Gear (Conveyor Belt)"
+        ])
+        
+        f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
+        
+        # Save selection for next boot
+        config["KIOSK_PRESET"] = f_choice
+        PersistentLayer.saveConfig(config)
     
-    f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
     if f_choice == "2":
         factory = PharmacyKioskFactory()
     elif f_choice == "3":
