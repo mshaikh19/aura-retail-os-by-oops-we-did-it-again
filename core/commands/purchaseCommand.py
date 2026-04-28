@@ -25,7 +25,7 @@ class PurchaseCommand(Command):
 
         # ---------------- EMERGENCY MODE LIMIT ---------------- #
 
-        from registry.central_registry import CentralRegistry
+        from registry.centralRegistry import CentralRegistry
         registry = CentralRegistry()
         if registry.getConfig("EMERGENCY_MODE") and self.quantity > 2:
             raise Exception("Emergency Mode active — max 2 units per purchase")
@@ -80,7 +80,7 @@ class PurchaseCommand(Command):
             )
 
             # ---------------- TASK 7.3: FAILURE SIMULATION ---------------- #
-            if random.random() < 0.2:   # 20% failure chance
+            if random.random() < 0.0:   # 0% failure chance
                 print(f"{Colors.ERROR}[HARDWARE]{Colors.RESET} Simulated hardware failure")
                 success = False
 

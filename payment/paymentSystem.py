@@ -10,7 +10,7 @@ from models.transaction import Transaction
 from persistence.persistenceLayer import PersistentLayer
 
 # Import Monitoring System
-from monitoring.monitoring_system import MonitoringSystem
+from monitoring.monitoringSystem import MonitoringSystem
 
 from utils.colors import Colors
 from core.sessionManager import SessionManager

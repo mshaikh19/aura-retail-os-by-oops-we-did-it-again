@@ -2,7 +2,7 @@ import time
 from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
-from monitoring.monitoring_system import MonitoringSystem
+from monitoring.monitoringSystem import MonitoringSystem
 
 from utils.colors import Colors
 from utils.ui_utils import drawBox

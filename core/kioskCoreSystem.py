@@ -4,7 +4,7 @@ from core.sessionManager import SessionManager
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
         #creating subsystems 
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
@@ -23,7 +23,7 @@ class KioskCoreSystem:
 
     def attachModule(self, module):
         """ Attaches a HardwareModule (Decorator) to the system """
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         self.top_module = module
         mod_name = type(module).__name__
         # Logged silently to Audit trail
@@ -32,7 +32,7 @@ class KioskCoreSystem:
 
     def performInitialScan(self):
         """ Performs a boot-time health check to log pre-existing alerts """
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         
         # Check Inventory for pre-existing low stock
         items = self.inventorySystem._inventory_system._items if hasattr(self.inventorySystem, "_inventory_system") else {}
