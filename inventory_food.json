@@ -1,0 +1,50 @@
+{
+    "products": {
+        "milk": {
+            "product_id": "F001",
+            "name": "Milk (500ml)",
+            "price": 55.0,
+            "stock": 15
+        },
+        "chips": {
+            "product_id": "F002",
+            "name": "Classic Potato Chips",
+            "price": 25.0,
+            "stock": 30
+        },
+        "cola": {
+            "product_id": "F003",
+            "name": "Classic Cola 300ml",
+            "price": 40.0,
+            "stock": 25
+        },
+        "bread": {
+            "product_id": "F004",
+            "name": "Multi-Grain Bread",
+            "price": 45.0,
+            "stock": 10
+        },
+        "water": {
+            "product_id": "F005",
+            "name": "Mineral Water 1L",
+            "price": 20.0,
+            "stock": 50
+        },
+        "biscuit": {
+            "product_id": "F006",
+            "name": "Digestive Biscuits",
+            "price": 35.0,
+            "stock": 20
+        }
+    },
+    "bundles": {
+        "snack_pack": {
+            "name": "Snack & Sip Pack",
+            "discount": 0.15,
+            "items": [
+                "classic potato chips",
+                "classic cola 300ml"
+            ]
+        }
+    }
+}

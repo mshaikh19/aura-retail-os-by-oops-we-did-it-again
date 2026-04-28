@@ -13,7 +13,7 @@ class SessionManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            print(f" {Colors.HEADER}◈ {Colors.BOLD}SESSION:{Colors.RESET} {Colors.TEXT}Manager initialized.{Colors.RESET}")
+            # Logged silently to Audit trail
         return cls._instance
 
     def startSession(self, kiosk_id, user_role="CUSTOMER"):
@@ -23,8 +23,7 @@ class SessionManager:
             
         self._active_session = Session(kiosk_id, user_role)
         PersistentLayer.saveSession(self._active_session.toDict())
-        
-        print(f"{Colors.HEADER}[SESSION]{Colors.RESET} New session started: {Colors.CYAN}{self._active_session.session_id[:8]}...{Colors.RESET}")
+        # Logged silently to Audit trail
         return self._active_session
 
     def getActiveSession(self):
@@ -36,7 +35,7 @@ class SessionManager:
         if self._active_session:
             self._active_session.addTransaction(transaction_id, amount)
             PersistentLayer.saveSession(self._active_session.toDict())
-            print(f"{Colors.HEADER}[SESSION]{Colors.RESET} Transaction {transaction_id[:8]} linked to session.")
+            # Logged silently to Audit trail
 
     def endSession(self):
         """ Ends the current session and persists final state """
@@ -45,4 +44,4 @@ class SessionManager:
             self._active_session.endSession()
             PersistentLayer.saveSession(self._active_session.toDict())
             self._active_session = None
-            print(f"{Colors.HEADER}[SESSION]{Colors.RESET} Session {Colors.CYAN}{sid}{Colors.RESET} closed successfully.")
+            # Logged silently to Audit trail

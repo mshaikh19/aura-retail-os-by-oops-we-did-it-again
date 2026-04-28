@@ -4,6 +4,8 @@ from core.commands.restockCommand import RestockCommand
 from utils.colors import Colors
 
 
+from utils.ui_utils import pad_ansi
+
 class KioskInterface:
     """
         FACADE PATTERN
@@ -11,8 +13,9 @@ class KioskInterface:
         Initialize the interface
     """
     def __init__(self, coreSystem):
+        from monitoring.monitoring_system import MonitoringSystem
         self.core = coreSystem
-        print(f" {Colors.CYAN}◈ {Colors.BOLD}INTERFACE:{Colors.RESET} {Colors.TEXT}Facade access point ready.{Colors.RESET}")
+        MonitoringSystem.notify(source="INTERFACE", event_type="FACADE_READY", detail="Unified Interface Facade access point online.")
 
     """
         Create a purchase item function to simulate the purchase of item 
@@ -85,37 +88,64 @@ class KioskInterface:
         Unified interface for checking all subsystem health.
         """
         data = self.core.getOperationalStatus()
+        width = 60
         
-        print("\n" + Colors.BLUE + " ╔" + "═"*58 + "╗" + Colors.RESET)
-        print(f" {Colors.BLUE}║{Colors.RESET}           {Colors.BOLD}{Colors.CYAN}❖ SYSTEM DIAGNOSTICS ENGINE{Colors.RESET}            {Colors.BLUE}║{Colors.RESET}")
-        print(Colors.BLUE + " ╠" + "═"*58 + "╣" + Colors.RESET)
+        print("\n" + Colors.BLUE + " ╔" + "═"*(width-2) + "╗" + Colors.RESET)
+        title_text = pad_ansi(Colors.BOLD + Colors.CYAN + "❖ SYSTEM DIAGNOSTICS ENGINE" + Colors.RESET, width-2, 'center')
+        print(f" {Colors.BLUE}║{title_text}{Colors.BLUE}║{Colors.RESET}")
+        print(Colors.BLUE + " ╠" + "═"*(width-2) + "╣" + Colors.RESET)
         
         # 1. Render Core Section
         core_data = data["CORE"]
         status_color = Colors.SUCCESS if core_data["AuraCore Integrity"] == "ACTIVE" else Colors.ERROR
-        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}AURACORE INTEGRITY:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Status:      {status_color}{core_data['AuraCore Integrity']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Personality: {Colors.TEXT}{core_data['Kiosk Personality']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Activity:    {Colors.DIM}{core_data['Activity Ledger']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
         
-        print(Colors.BLUE + " ╟" + "─"*58 + "╢" + Colors.RESET)
+        lines = [
+            f"{Colors.BOLD}AURACORE INTEGRITY:{Colors.RESET}",
+            f" > Status:      {status_color}{core_data['AuraCore Integrity']}{Colors.RESET}",
+            f" > Personality: {Colors.TEXT}{core_data['Kiosk Personality']}{Colors.RESET}",
+            f" > Activity:    {Colors.DIM}{core_data['Activity Ledger']}{Colors.RESET}"
+        ]
         
-        # 2. Render Hardware Section
+        for line in lines:
+            content = pad_ansi("  " + line, width-2, 'left')
+            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+        
+        # 2. Render Inventory Section
+        inv = data["INVENTORY"]
+        print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
+        lines = [
+            f"{Colors.BOLD}INVENTORY HEALTH:{Colors.RESET}",
+            f" > Managed SKUs:  {Colors.HEADER}{inv['Managed SKUs']}{Colors.RESET}",
+            f" > Total Stock:   {Colors.TEXT}{inv['Total Stock']}{Colors.RESET}",
+            f" > Health Status: {Colors.SUCCESS if inv['Status'] == 'OPTIMIZED' else Colors.WARNING}{inv['Status']}{Colors.RESET}"
+        ]
+        for line in lines:
+            content = pad_ansi("  " + line, width-2, 'left')
+            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+
+        # 3. Render Hardware Section
         hw = data["HARDWARE"]
-        print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}HARDWARE STACK:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Dispense Node: {Colors.HEADER}{hw['Dispensing Node']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
-        print(f" {Colors.BLUE}║{Colors.RESET}   > Kinetic Drive: {Colors.DIM}{hw['Kiosk Motor Module']}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+        print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
+        lines = [
+            f"{Colors.BOLD}HARDWARE STACK:{Colors.RESET}",
+            f" > Dispense Node: {Colors.HEADER}{hw['Dispensing Node']}{Colors.RESET}",
+            f" > Kinetic Drive: {Colors.DIM}{hw['Kiosk Motor Module']}{Colors.RESET}",
+            f" > Added Modules: {Colors.CYAN}{hw['Modules Added']}{Colors.RESET}"
+        ]
+        for line in lines:
+            content = pad_ansi("  " + line, width-2, 'left')
+            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
         
-        # 3. Render Extensions Section (if any)
+        # 4. Render Extensions Section (if any)
         ext = data["EXTENSIONS"]
         if ext:
-            print(Colors.BLUE + " ╟" + "─"*58 + "╢" + Colors.RESET)
-            print(f" {Colors.BLUE}║{Colors.RESET}  {Colors.BOLD}ACTIVE EXTENSIONS:{Colors.RESET}".ljust(66) + f"{Colors.BLUE}║{Colors.RESET}")
+            print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
+            print(f" {Colors.BLUE}║{pad_ansi('  ' + Colors.BOLD + 'ACTIVE EXTENSIONS:', width-2)}{Colors.BLUE}║{Colors.RESET}")
             for key, val in ext.items():
-                print(f" {Colors.BLUE}║{Colors.RESET}   + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}".ljust(75) + f"{Colors.BLUE}║{Colors.RESET}")
+                content = f"   + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}"
+                print(f" {Colors.BLUE}║{pad_ansi('  ' + content, width-2)}{Colors.BLUE}║{Colors.RESET}")
         
-        print(Colors.BLUE + " ╚" + "═"*58 + "╝" + Colors.RESET)
-        return True
+        print(Colors.BLUE + " ╚" + "═"*(width-2) + "╝" + Colors.RESET)
         
         # Fetch alerts from Monitoring System
         try:
@@ -123,3 +153,5 @@ class KioskInterface:
             MonitoringSystem.showAlerts()
         except ImportError:
             pass
+            
+        return True
