@@ -23,6 +23,13 @@ class PurchaseCommand(Command):
         if self.product.getAvailableStock() < self.quantity:
             raise Exception("Not enough stock")
 
+        # ---------------- EMERGENCY MODE LIMIT ---------------- #
+
+        from registry.central_registry import CentralRegistry
+        registry = CentralRegistry()
+        if registry.getConfig("EMERGENCY_MODE") and self.quantity > 2:
+            raise Exception("Emergency Mode active — max 2 units per purchase")
+
         # ---------------- TASK 7.2: HARDWARE DEPENDENCY ---------------- #
 
         required_module = getattr(self.product.model, "required_module", None)
@@ -31,7 +38,7 @@ class PurchaseCommand(Command):
             active_modules = core.getActiveModuleNames()
 
             if required_module not in active_modules:
-                raise Exception(f"{self.product.getName()} requires {required_module.upper()} module")
+                raise Exception(f"FEATURE NOT AVAILABLE: {self.product.getName()} requires the {required_module.upper()} hardware module to be attached.")
 
         # ---------------- PRICE ---------------- #
 

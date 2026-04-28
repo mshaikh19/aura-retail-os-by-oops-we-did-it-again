@@ -153,9 +153,15 @@ class PersistentLayer:
     @staticmethod
     def saveConfig(config_dict):
         """
-        Save system configuration
+        Save system configuration. Filters out non-serializable objects
+        (like strategy instances) to prevent JSON errors.
         """
-        PersistentLayer.save("config.json", config_dict)
+        serializable_config = {}
+        for k, v in config_dict.items():
+            if isinstance(v, (str, int, float, bool, list, dict, type(None))):
+                serializable_config[k] = v
+        
+        PersistentLayer.save("config.json", serializable_config)
 
     @staticmethod
     def loadConfig():

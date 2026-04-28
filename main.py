@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import io
 # Force UTF-8 encoding for premium UI rendering on Windows
 if sys.stdout.encoding != 'utf-8':
@@ -149,7 +149,7 @@ def pad_ansi(text, width, align='left'):
         return (' ' * left) + text + (' ' * right)
     return text
 
-def displayInventory(products, screen_width=80):
+def displayInventory(products, active_modules=None, screen_width=80):
     """ 
     Displays the state-of-the-art Aura Kiosk Dashboard with perfect centering and alignment.
     """
@@ -183,7 +183,19 @@ def displayInventory(products, screen_width=80):
         print(f"{indent}{Colors.BLUE}║{h_ref}{Colors.BLUE}║{h_name}{Colors.BLUE}║{h_val}{Colors.BLUE}║{h_stock}{Colors.BLUE}║")
         print(Colors.BLUE + header)
         
+        active_modules = active_modules or []
+        
         for name, prod in products.items():
+            # Module Check
+            req_mod = getattr(prod.model, "required_module", None) if not isinstance(prod, ProductBundle) else None
+            if req_mod and req_mod not in active_modules:
+                # Option 1: Skip it entirely
+                # continue 
+                # Option 2: Show as unavailable (let's do this for better UX)
+                is_available = False
+            else:
+                is_available = True
+
             mapping[str(idx)] = name
             
             price_str = f"Rs.{prod.getPrice():,.2f}"
@@ -192,20 +204,29 @@ def displayInventory(products, screen_width=80):
             # Stock Logic
             stock_color = Colors.SUCCESS
             status_text = "STABLE"
-            if stock_val <= 0:
+            if not is_available:
+                stock_color, status_text = Colors.DIM, "OFFLINE"
+            elif stock_val <= 0:
                 stock_color, status_text = Colors.ERROR, "EMPTY "
             elif stock_val < 5:
                 stock_color, status_text = Colors.WARNING, "LOW   "
             
             # Progress Bar (8 segments for smaller table)
-            filled = min(8, int((stock_val / 20) * 8))
-            bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8-filled)}{Colors.RESET}"
-            stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
-            
+            if is_available:
+                filled = min(8, int((stock_val / 20) * 8))
+                bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8-filled)}{Colors.RESET}"
+                stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
+            else:
+                stock_status = f"{Colors.DIM}[MODULE REQ: {req_mod.upper()}]{Colors.RESET}"
+
             is_bundle = isinstance(prod, ProductBundle)
             display_name = name.upper()
             
-            if is_bundle:
+            if not is_available:
+                icon = f"{Colors.DIM}○ {Colors.RESET}"
+                item_text = f"{icon}{Colors.DIM}{display_name}{Colors.RESET}"
+                price_str = f"{Colors.DIM}---{Colors.RESET}"
+            elif is_bundle:
                 icon = f"{Colors.HEADER}⬢ {Colors.RESET}"
                 item_text = f"{icon}{Colors.HEADER}{Colors.BOLD}{display_name}{Colors.RESET}"
             else:
@@ -213,15 +234,15 @@ def displayInventory(products, screen_width=80):
                 item_text = f"{icon}{Colors.TEXT}{display_name}{Colors.RESET}"
             
             # Row Printing
-            c_ref   = pad_ansi(f" {Colors.BOLD}{idx:<2}{Colors.RESET}", W_REF)
+            c_ref   = pad_ansi(f" {Colors.BOLD if is_available else Colors.DIM}{idx:<2}{Colors.RESET}", W_REF)
             c_name  = pad_ansi(f" {item_text}", W_NAME)
-            c_val   = pad_ansi(f" {Colors.TEXT}{price_str:>8} ", W_VAL)
+            c_val   = pad_ansi(f" {Colors.TEXT if is_available else Colors.DIM}{price_str:>8} ", W_VAL)
             c_stock = pad_ansi(f" {stock_status}", W_STOCK)
             
             print(f"{indent}{Colors.BLUE}║{c_ref}{Colors.BLUE}║{c_name}{Colors.BLUE}║{c_val}{Colors.BLUE}║{c_stock}{Colors.BLUE}║")
             
             # Bundle Tree
-            if is_bundle:
+            if is_bundle and is_available:
                 items = prod.getItems()
                 for i, sub in enumerate(items):
                     conn = "╠═" if i < len(items) - 1 else "╚═"
@@ -295,9 +316,11 @@ def paymentChoice():
         print(Colors.ERROR + " Invalid selection. Please choose 1, 2, or 3." + Colors.RESET)
 
 def purchaseFlow(interface, products):
+    from registry.central_registry import CentralRegistry
     clearScreen()
     print(Colors.BOLD + " --- QUICK SELECTION CATALOG --- " + Colors.RESET)
-    mapping = displayInventory(products)
+    active_modules = CentralRegistry().getConfig("ACTIVE_MODULES") or []
+    mapping = displayInventory(products, active_modules=active_modules)
 
     ref = input(f"\n {Colors.CYAN}Enter Product Reference (1-{len(mapping)}):{Colors.RESET} ").strip()
     name = mapping.get(ref)
@@ -317,7 +340,6 @@ def purchaseFlow(interface, products):
         return
 
     # Emergency Mode: restrict single transaction to max 2 units
-    from registry.central_registry import CentralRegistry
     if CentralRegistry().getConfig("EMERGENCY_MODE"):
         if qty > 2:
             print(Colors.WARNING + " ! EMERGENCY MODE: Purchase limit is 2 units per transaction." + Colors.RESET)
@@ -378,10 +400,12 @@ def refundFlow(interface):
     pauseScreen()
 
 def restockFlow(interface, products):
+    from registry.central_registry import CentralRegistry
     clearScreen()
     print(Colors.BOLD + " --- RESTOCK MANAGEMENT --- " + Colors.RESET)
-    mapping = displayInventory(products)
-    
+    active_modules = CentralRegistry().getConfig("ACTIVE_MODULES") or []
+    mapping = displayInventory(products, active_modules=active_modules)
+
     ref = input(f"\n {Colors.CYAN}Select Item to Restock (1-{len(mapping)}):{Colors.RESET} ").strip()
     name = mapping.get(ref)
     item = products.get(name)
@@ -667,7 +691,6 @@ def runKiosk():
     registry.registerHardware(hardware)
 
 
-    # Core System Assembly
     core = showProgress("Assembling Aura Core Kernel", 
         lambda: KioskCoreSystem(
             inventorySystem=proxy,
@@ -676,6 +699,13 @@ def runKiosk():
             kioskType=kiosk_type_label
         )
     )
+
+    # Load persisted configuration and apply emergency mode if active
+    saved_config = PersistentLayer.loadConfig()
+    if saved_config:
+        registry._config.update(saved_config)
+        if registry.getConfig("EMERGENCY_MODE"):
+            core.setSystemStatus("EMERGENCY")
 
     # Register this kiosk instance globally
     showProgress("Registering Kiosk Identity", 
@@ -711,6 +741,11 @@ def runKiosk():
     while True:
         clearScreen()
         renderHeader(registry)
+
+        if registry.getConfig("EMERGENCY_MODE"):
+            print(centerLine(f"{Colors.ERROR}{Colors.BOLD}🚨 EMERGENCY MODE ACTIVE 🚨{Colors.RESET}", 80))
+            print(centerLine(f"{Colors.WARNING}System-wide purchase limit: {Colors.BOLD}MAX 2 UNITS{Colors.RESET}{Colors.WARNING} per transaction.{Colors.RESET}", 80))
+            print()
         
         drawBox("ACCESS MAIN TERMINAL", [
             " [1]  Quick Purchase",

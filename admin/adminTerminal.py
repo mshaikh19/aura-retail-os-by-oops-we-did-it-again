@@ -1,4 +1,4 @@
-﻿import time
+import time
 from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
@@ -158,10 +158,12 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             if core.getSystemStatus() == "EMERGENCY":
                 core.setSystemStatus("ACTIVE")
                 registry.setConfig("EMERGENCY_MODE", False)
+                PersistentLayer.saveConfig(registry._config)
                 print(f" {Colors.SUCCESS} Emergency Mode DEACTIVATED.{Colors.RESET}")
             else:
                 core.setSystemStatus("EMERGENCY")
                 registry.setConfig("EMERGENCY_MODE", True)
+                PersistentLayer.saveConfig(registry._config)
                 print(f" {Colors.WARNING} Emergency Mode ACTIVATED.{Colors.RESET}")
             time.sleep(1.5)
 
