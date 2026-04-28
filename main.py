@@ -494,6 +494,19 @@ def runKiosk():
         # --- UNIFIED BOOT SEQUENCE ---
         registry = inventory_real = monitor = payment = None
         width = 80
+        config = PersistentLayer.loadConfig()
+        registry = CentralRegistry()
+        preset = config.get("KIOSK_PRESET")
+        preset_name_map = {
+            "food": "Aura Food & Beverage Kiosk",
+            "pharmacy": "Aura Medical Pharmacy Kiosk",
+            "tech": "Aura Cyber-Tech Hub",
+            "metro": "Aura Metro Essentials Kiosk",
+            "university": "Aura University Tech Hub",
+            "hospital": "Aura Hospital Pharmacy Kiosk",
+            "disaster": "Aura Disaster Relief Kiosk"
+        }
+        welcome_machine_name = preset_name_map.get(preset, "Aura Food & Beverage Kiosk")
         
         # Splash Screen (Title Page)
         clearScreen()
@@ -501,13 +514,13 @@ def runKiosk():
         print(centerLine(f"{Colors.BOLD}RETAIL OPERATING SYSTEM{Colors.RESET}", width))
         print(centerLine(f"{Colors.DIM}v4.2.0-STABLE | BUILD 2024.04{Colors.RESET}", width))
         print()
+        print(centerLine(f"{Colors.CYAN}ACTIVE MACHINE: {Colors.BOLD}{welcome_machine_name}{Colors.RESET}", width))
+        print()
         print(centerLine(f"{Colors.CYAN}Welcome to the future of automated retail.{Colors.RESET}", width))
         print("\n" + centerLine(f"{Colors.BOLD}PRESS ENTER TO INITIALIZE AURA{Colors.RESET}", width))
         input()
         
         # --- KIOSK CONFIGURATION & PRESET SELECTION ---
-        config = PersistentLayer.loadConfig()
-        registry = CentralRegistry()
         force_selection = config.get("ALWAYS_ASK_CONFIG", False)
         preset = config.get("KIOSK_PRESET")
         preset_labels = registry.PRESETS
@@ -536,15 +549,15 @@ def runKiosk():
         
         # Initialize appropriate Factory based on Preset
         if preset == "pharmacy":
-            factory = PharmacyKioskFactory()
+            factory = PharmacyKioskFactory("Medical Pharmacy Blueprint")
         elif preset == "tech":
-            factory = TechGearFactory()
+            factory = TechGearFactory("Cyber-Tech Blueprint")
         elif preset == "metro":
             factory = MetroKioskFactory()
         elif preset == "university":
-            factory = TechGearFactory()
+            factory = TechGearFactory("University Tech Hub Blueprint")
         elif preset == "hospital":
-            factory = PharmacyKioskFactory()
+            factory = PharmacyKioskFactory("Hospital Pharmacy Blueprint")
         elif preset == "disaster":
             factory = EmergencyKioskFactory()
         else:
