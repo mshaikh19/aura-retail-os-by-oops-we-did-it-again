@@ -109,11 +109,12 @@ class PersistentLayer:
         from models.productModel import ProductModel
         from inventory.components.productBundle import ProductBundle
 
-        if not os.path.exists(filename):
+        file_path = PersistentLayer._getFilePath(filename)
+        if not os.path.exists(file_path):
             return False
             
         try:
-            with open(filename, "r") as f:
+            with open(file_path, "r") as f:
                 data = json.load(f)
                 
             # Clear existing
@@ -154,7 +155,8 @@ class PersistentLayer:
                     "items": [i.model.name.lower() for i in item._items]
                 }
         
-        with open(filename, "w") as f:
+        file_path = PersistentLayer._getFilePath(filename)
+        with open(file_path, "w") as f:
             json.dump(data, f, indent=4)
 
     # ---------------- SESSIONS ---------------- #

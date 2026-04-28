@@ -5,22 +5,20 @@ from persistence.persistenceLayer import PersistentLayer
 from monitoring.monitoring_system import MonitoringSystem
 
 from utils.colors import Colors
+from utils.ui_utils import drawBox
 
 def clearScreen():
-    print("\033[H\033[J", end="")
+    import os
+    if os.name == 'nt': os.system('cls')
+    else: os.system('clear')
+    print("\033[H\033[2J\033[3J", end="", flush=True)
 
 def pauseScreen():
+    from utils.ui_utils import pad_ansi
     print(f"\n {Colors.DIM}─" + "─"*58 + Colors.RESET)
     input(f" >> Press ENTER to return to menu...")
 
-def drawBox(title, lines):
-    width = 60
-    print(Colors.BLUE + "╔" + "═"*(width-2) + "╗")
-    print(f"║{Colors.BOLD}{title:^58}{Colors.RESET}{Colors.BLUE}║")
-    print("╠" + "═"*(width-2) + "╣")
-    for line in lines:
-        print(f"║ {line:<57}║")
-    print("╚" + "═"*(width-2) + "╝" + Colors.RESET)
+
 
 def adminFlow(inventory_real, registry, interface, save_callback):
     """ 
@@ -73,6 +71,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         if choice == "1":
             clearScreen()
             all_transactions = PersistentLayer.load("transactions.json")
+            from utils.ui_utils import pad_ansi
             
             # Filter by kiosk type
             transactions = [t for t in all_transactions if t.get('kiosk_type') == kiosk_type]
@@ -93,7 +92,11 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                 
                 for t in transactions[-12:]:
                     name = t['product_name'][:12]
-                    print(f" {Colors.CYAN}║{Colors.RESET} {Colors.DIM}{t['timestamp']:<20}{Colors.RESET} {Colors.CYAN}║{Colors.RESET} {name:<12} {Colors.CYAN}║{Colors.RESET} {t['quantity']:^4} {Colors.CYAN}║{Colors.RESET} {Colors.SUCCESS}Rs.{t['total_amount']:>9.2f}{Colors.RESET} {Colors.CYAN}║{Colors.RESET}")
+                    c_time = pad_ansi(f"{Colors.DIM}{t['timestamp']}{Colors.RESET}", 20, 'left')
+                    c_asset = pad_ansi(name, 12, 'left')
+                    c_vol = pad_ansi(str(t['quantity']), 4, 'center')
+                    c_rev = pad_ansi(f"{Colors.SUCCESS}Rs.{t['total_amount']:>9.2f}{Colors.RESET}", 12, 'right')
+                    print(f" {Colors.CYAN}║{Colors.RESET} {c_time} {Colors.CYAN}║{Colors.RESET} {c_asset} {Colors.CYAN}║{Colors.RESET} {c_vol} {Colors.CYAN}║{Colors.RESET} {c_rev} {Colors.CYAN}║{Colors.RESET}")
                 print(f" {Colors.CYAN}{bot}{Colors.RESET}")
                 
                 total = sum(t['total_amount'] for t in transactions)
@@ -109,6 +112,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             bot = f"╚{'═'*30}╩{'═'*14}╩{'═'*18}╝"
             header = f"║ {'ASSET NAME':<28} ║ {'UNIT COUNT':^12} ║ {'HEALTH STATUS':^16} ║"
 
+            from utils.ui_utils import pad_ansi
             print(f" {Colors.HEADER}{top}{Colors.RESET}")
             print(f" {Colors.HEADER}{header}{Colors.RESET}")
             print(f" {Colors.HEADER}{sep}{Colors.RESET}")
@@ -122,7 +126,10 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                     if stock < 5: status = f"{Colors.ERROR}CRITICAL{Colors.RESET}"
                     elif stock < 10: status = f"{Colors.WARNING}WARNING{Colors.RESET}"
                     
-                    print(f" {Colors.HEADER}║{Colors.RESET} {item.model.name:<28} {Colors.HEADER}║{Colors.RESET} {stock:^12} {Colors.HEADER}║{Colors.RESET} {status:^16} {Colors.HEADER}║{Colors.RESET}")
+                    c_name = pad_ansi(item.model.name, 28, 'left')
+                    c_stock = pad_ansi(str(stock), 12, 'center')
+                    c_status = pad_ansi(status, 16, 'center')
+                    print(f" {Colors.HEADER}║{Colors.RESET} {c_name} {Colors.HEADER}║{Colors.RESET} {c_stock} {Colors.HEADER}║{Colors.RESET} {c_status} {Colors.HEADER}║{Colors.RESET}")
             print(f" {Colors.HEADER}{bot}{Colors.RESET}")
             
             print(f"\n [R] Restock Specific Item | [B] Bulk Restock (50) | [X] Back")
@@ -144,6 +151,7 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                 
         elif choice == "3":
             clearScreen()
+            from utils.ui_utils import pad_ansi
             print(f"\n {Colors.HEADER} ⚙ CONFIGURATION: PRICING & DISCOUNTS{Colors.RESET}")
             print(f" {Colors.DIM}╔{'═'*60}╗{Colors.RESET}")
             keys = list(items.keys())
@@ -153,8 +161,9 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                 if isinstance(item, ProductBundle): 
                     val += f" ({Colors.WARNING}{item._discount*100}% Disc{Colors.RESET})"
                 
-                line = f" [{i}] {item.getName():<25} | {val}"
-                print(f" {Colors.DIM}║{Colors.RESET} {line:<58} {Colors.DIM}║{Colors.RESET}")
+                content = f" [{i}] {item.getName():<25} | {val}"
+                line_text = pad_ansi(content, 58, 'left')
+                print(f" {Colors.DIM}║{Colors.RESET} {line_text} {Colors.DIM}║{Colors.RESET}")
             print(f" {Colors.DIM}╚{'═'*60}╝{Colors.RESET}")
             
             idx = input(f"\n {Colors.CYAN}Select Index to configure:{Colors.RESET} ").strip()
@@ -189,25 +198,60 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             time.sleep(1.5)
 
         elif choice == "6":
-            clearScreen()
-            drawBox("MAINTENANCE OPERATIONS", [
-                " [1]  Reset System Status to ACTIVE (Clear Errors)",
-                " [2]  Wipe Kiosk Preset (Force Re-select on Boot)",
-                " [3]  Back"
-            ])
-            m_choice = input(f"\n {Colors.CYAN}Selection >> {Colors.RESET}").strip()
-            if m_choice == "1":
-                core.setSystemStatus("ACTIVE")
-                print(f" {Colors.SUCCESS} System status reset to ACTIVE.{Colors.RESET}")
-            elif m_choice == "2":
+            # MAINTENANCE: Consolidation to Minimal Options
+            while True:
+                clearScreen()
                 config = PersistentLayer.loadConfig()
-                if "KIOSK_PRESET" in config:
-                    del config["KIOSK_PRESET"]
-                    PersistentLayer.saveConfig(config)
-                    print(f" {Colors.SUCCESS} Preset wiped. Restart app to reconfigure.{Colors.RESET}")
-                else:
-                    print(f" {Colors.DIM} No preset found to wipe.{Colors.RESET}")
-            time.sleep(1.5)
+                always_ask = config.get("ALWAYS_ASK_CONFIG", False)
+                ask_status = f"{Colors.SUCCESS}ON{Colors.CYAN}" if always_ask else f"{Colors.ERROR}OFF{Colors.CYAN}"
+                
+                drawBox("SYSTEM CONFIGURATION & MAINTENANCE", [
+                    f" [1]  Re-Configure Kiosk (Type & Boot)",
+                    f" [2]  Factory Reset (Clear Logs & Status)",
+                    f" [3]  Back to Administration"
+                ])
+                
+                m_choice = input(f"\n {Colors.CYAN}Selection >> {Colors.RESET}").strip()
+                if m_choice == "1":
+                    # Combined Re-config
+                    clearScreen()
+                    drawBox("RE-CONFIGURATION NODE", [
+                        f" Status: {ask_status}",
+                        "",
+                        " [T] Toggle 'Always Ask' on Boot",
+                        " [C] Change Kiosk Type (Direct)",
+                        " [B] Back"
+                    ])
+                    opt = input(f"\n {Colors.CYAN}Sub-Selection >> {Colors.RESET}").strip().upper()
+                    if opt == "T":
+                        config["ALWAYS_ASK_CONFIG"] = not always_ask
+                        PersistentLayer.saveConfig(config)
+                        print(f" {Colors.SUCCESS} Boot configuration updated.{Colors.RESET}")
+                        time.sleep(1)
+                        return "REBOOT"
+                    elif opt == "C":
+                        drawBox("SWITCH KIOSK MODE", [
+                            " [1]  Food & Beverage",
+                            " [2]  Medical Pharmacy",
+                            " [3]  Cyber-Tech Gear",
+                            " [4]  Cancel"
+                        ])
+                        nm = input(f"\n {Colors.CYAN}New Mode >> {Colors.RESET}").strip()
+                        modes = {"1": "food", "2": "pharmacy", "3": "tech"}
+                        if nm in modes:
+                            config["KIOSK_PRESET"] = modes[nm]
+                            PersistentLayer.saveConfig(config)
+                            print(f" {Colors.SUCCESS} Mode changed to {modes[nm].upper()}.{Colors.RESET}")
+                            time.sleep(1)
+                            return "REBOOT"
+                    continue
+                elif m_choice == "2":
+                    core.setSystemStatus("ACTIVE")
+                    MonitoringSystem._alerts = []
+                    print(f" {Colors.SUCCESS} System logs and status have been reset.{Colors.RESET}")
+                    time.sleep(1)
+                elif m_choice == "3":
+                    break
 
         elif choice == "7":
-            break
+            return "EXIT"

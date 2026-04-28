@@ -55,7 +55,7 @@ class SystemBootstrapper:
             proxy = SecureInventoryProxy(
                 inv, 
                 monitor=mon,
-                on_change=lambda: saveCurrentInventory(inv._items, inventory_file)
+                on_change=lambda: PersistentLayer.saveInventory(inv._items, inventory_file)
             )
             
             # 4. Hardware HAL
