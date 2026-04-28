@@ -13,7 +13,7 @@ class KioskInterface:
         Initialize the interface
     """
     def __init__(self, coreSystem):
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         self.core = coreSystem
         MonitoringSystem.notify(source="INTERFACE", event_type="FACADE_READY", detail="Unified Interface Facade access point online.")
 
@@ -38,7 +38,7 @@ class KioskInterface:
             Create a command object to pass to the core system for purchasing product
         """
         command = PurchaseCommand(product, quantity, paymentMethod)
-        self.core.executeCommand(command)
+        return self.core.executeCommand(command)
 
     def isRefundAvailable(self):
         """
@@ -149,7 +149,7 @@ class KioskInterface:
         
         # Fetch alerts from Monitoring System
         try:
-            from monitoring.monitoring_system import MonitoringSystem
+            from monitoring.monitoringSystem import MonitoringSystem
             MonitoringSystem.showAlerts()
         except ImportError:
             pass

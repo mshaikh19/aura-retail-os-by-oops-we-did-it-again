@@ -8,9 +8,9 @@ class SystemBootstrapper:
     """
     @staticmethod
     def bootstrap(factory, inventory_real, registry, payment, monitor, show_progress_func):
-        from registry.central_registry import CentralRegistry
+        from registry.centralRegistry import CentralRegistry
         from inventory.components.inventoryManager import InventorySystem
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         from payment.paymentSystem import PaymentSystem
         from inventory.security.inventoryProxy import SecureInventoryProxy
         from hardware.interfaces.hardwareAbstraction import HardwareAbstraction
@@ -33,9 +33,9 @@ class SystemBootstrapper:
 
             # 2. Catalog Sync (Silent)
             kiosk_type = factory.getKioskType()
-            inventory_file = "inventory_food.json"
-            if "Pharmacy" in kiosk_type: inventory_file = "inventory_pharmacy.json"
-            if "Tech" in kiosk_type: inventory_file = "inventory_tech.json"
+            inventory_file = "inventoryFood.json"
+            if "Pharmacy" in kiosk_type: inventory_file = "inventoryPharmacy.json"
+            if "Tech" in kiosk_type: inventory_file = "inventoryTech.json"
 
             if not PersistentLayer.loadInventory(inv, inventory_file):
                 data = factory.getDefaultInventory()

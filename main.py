@@ -12,12 +12,12 @@ from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from inventory.components.inventoryManager import InventorySystem
 from inventory.security.inventoryProxy import SecureInventoryProxy
-from registry.central_registry import CentralRegistry
+from registry.centralRegistry import CentralRegistry
 
 from hardware.interfaces.hardwareAbstraction import HardwareAbstraction
 from hardware.dispensers.spiralDispenser import SpiralDispenser
 
-from monitoring.monitoring_system import MonitoringSystem
+from monitoring.monitoringSystem import MonitoringSystem
 from persistence.persistenceLayer import PersistentLayer
 
 # Import Modules
@@ -237,25 +237,46 @@ def displayInventory(products, active_modules=None, screen_width=80):
 """ Show the user welcome screen """
 # Redundant welcomeScreen removed to unify boot flow
 
-def paymentChoice():
-    """ Gets payment choice using an easy-to-understand menu """
+def paymentChoice(registry):
+    """ Gets payment choice using an easy-to-understand menu with hardware validation """
+    active_modules = registry.getConfig("ACTIVE_MODULES") or []
+    has_network = "network" in [m.lower() for m in active_modules]
 
     clearScreen()
+    
+    upi_line = "1. UPI (Online QR)"
+    card_line = "2. Credit/Debit Card"
+    
+    if not has_network:
+        upi_line += f" {Colors.ERROR}[OFFLINE]{Colors.RESET}"
+        card_line += f" {Colors.ERROR}[OFFLINE]{Colors.RESET}"
+
     drawBox("PAYMENT GATEWAY", [
-        "1. UPI (Online QR)",
-        "2. Credit/Debit Card",
-        "3. Digital Wallet"
+        upi_line,
+        card_line,
+        "3. Digital Wallet",
+        "",
+        f" {Colors.DIM}Note: UPI/Card require active Network Module.{Colors.RESET}"
     ])
     
     while True:
-        choice = input("\n Select Payment Method (1-3): ")
-        if choice == "1": return "UPI"
-        if choice == "2": return "CARD"
-        if choice == "3": return "WALLET"
-        print(Colors.ERROR + " Invalid selection. Please choose 1, 2, or 3." + Colors.RESET)
+        choice = input(f"\n {Colors.CYAN}Select Payment Method (1-3): {Colors.RESET}").strip()
+        if choice == "1":
+            if not has_network:
+                print(f" {Colors.ERROR}! UPI unavailable. Please select another method.{Colors.RESET}")
+                continue
+            return "UPI"
+        if choice == "2":
+            if not has_network:
+                print(f" {Colors.ERROR}! CARD unavailable. Please select another method.{Colors.RESET}")
+                continue
+            return "CARD"
+        if choice == "3": 
+            return "WALLET"
+        print(f" {Colors.ERROR}! Invalid selection.{Colors.RESET}")
 
 def purchaseFlow(interface, products):
-    from registry.central_registry import CentralRegistry
+    from registry.centralRegistry import CentralRegistry
     clearScreen()
     print(Colors.BOLD + " --- QUICK SELECTION CATALOG --- " + Colors.RESET)
     active_modules = CentralRegistry().getConfig("ACTIVE_MODULES") or []
@@ -290,12 +311,17 @@ def purchaseFlow(interface, products):
         pauseScreen()
         return
 
-    method = paymentChoice()
+    method = paymentChoice(CentralRegistry())
     clearScreen()
     
-    interface.purchaseItem(item, qty, method)
+    success = interface.purchaseItem(item, qty, method)
     showProgress(f"Processing {method} Authorization")
-    print(Colors.SUCCESS + f"\n [SUCCESS] {qty}x {name.title()} dispensed." + Colors.RESET)
+    
+    if success:
+        print(Colors.SUCCESS + f"\n [SUCCESS] {qty}x {name.title()} dispensed." + Colors.RESET)
+    else:
+        print(Colors.ERROR + f"\n [FAILURE] Transaction could not be completed." + Colors.RESET)
+        
     pauseScreen()
 
 def refundFlow(interface):
@@ -313,7 +339,7 @@ def refundFlow(interface):
         pauseScreen()
         return
 
-    method = paymentChoice()
+    method = paymentChoice(CentralRegistry())
     
     # Process the refund
     clearScreen()
@@ -339,7 +365,7 @@ def refundFlow(interface):
     pauseScreen()
 
 def restockFlow(interface, products):
-    from registry.central_registry import CentralRegistry
+    from registry.centralRegistry import CentralRegistry
     clearScreen()
     print(Colors.BOLD + " --- RESTOCK MANAGEMENT --- " + Colors.RESET)
     active_modules = CentralRegistry().getConfig("ACTIVE_MODULES") or []
@@ -502,28 +528,36 @@ def hardwareSimulationMenu(core):
 
 
 def shutdownScreen(core):
-    """ Cinematic shutdown experience """
+    """ Cinematic minimal shutdown experience """
     width = 80
     clearScreen()
     printLogo()
-    print(centerLine(f"{Colors.HEADER}SYSTEM DECOMMISSIONING INITIATED{Colors.RESET}", width))
-    print(f" {Colors.DIM}─"*78 + Colors.RESET)
     
-    steps = [
-        "Synchronizing remote audit trail...",
-        "Closing encrypted session sockets...",
-        "Purging transient memory cache...",
-        "De-registering hardware peripherals...",
-        "Initiating final core purge..."
+    decommission_steps = [
+        "Syncing Logs",
+        "Closing Sockets",
+        "Clearing Cache",
+        "Detaching Hardware",
+        "Core Purge"
     ]
     
-    for step in steps:
-        print(f" {Colors.DIM}[SYS] {step}{Colors.RESET}")
-        time.sleep(0.3)
+    # Show a unified progress for all decommissioning tasks
+    for step in decommission_steps:
+        showProgress(f"DECOMMISSIONING: {step}", duration=0.4)
     
-    print(f"\n" + centerLine(f"{Colors.BOLD}{Colors.SUCCESS}AURA OS OFFLINE. GOODBYE.{Colors.RESET}", width))
-    print(centerLine(f"{Colors.DIM}Thank you for choosing Aura Retail Technologies.{Colors.RESET}", width))
-    time.sleep(1)
+    clearScreen()
+    printLogo()
+    
+    drawBox("SYSTEM OFFLINE", [
+        "Aura Retail OS has safely powered down.",
+        "",
+        "  [STATUS]  Memory Purged",
+        "  [STATUS]  Hardware Disconnected",
+        "  [STATUS]  Session Synchronized"
+    ])
+    
+    print("\n" + centerLine(f"{Colors.DIM}Thank you for choosing Aura Retail Technologies.{Colors.RESET}", width))
+    time.sleep(1.2)
 
 def runKiosk():
     while True:
@@ -576,11 +610,11 @@ def runKiosk():
         
         # Map kiosk type to specific inventory file
         inv_map = {
-            "Aura Food & Beverage Kiosk": "inventory_food.json",
-            "Aura Medical Pharmacy Kiosk": "inventory_pharmacy.json",
-            "Aura Cyber-Tech Hub": "inventory_tech.json"
+            "Aura Food & Beverage Kiosk": "inventoryFood.json",
+            "Aura Medical Pharmacy Kiosk": "inventoryPharmacy.json",
+            "Aura Cyber-Tech Hub": "inventoryTech.json"
         }
-        inventory_file = inv_map.get(kiosk_type_label, "inventory_default.json")
+        inventory_file = inv_map.get(kiosk_type_label, "inventoryDefault.json")
         
         # Step 3-7: Unified Abstracted Bootstrap (Seamless transition)
         from core.bootstrapper import SystemBootstrapper
