@@ -25,6 +25,8 @@ from admin.adminTerminal import adminFlow
 from factory.foodKioskFactory import FoodKioskFactory
 from factory.pharmacyKioskFactory import PharmacyKioskFactory
 from factory.techGearFactory import TechGearFactory
+from factory.metroKioskFactory import MetroKioskFactory
+from factory.emergencyKioskFactory import EmergencyKioskFactory
 from core.security.protectionProxy import TechnicianSecurityProxy
 import os
 import time
@@ -119,7 +121,7 @@ def printLogo():
 
 
 
-from utils.ui_utils import pad_ansi, strip_ansi, drawBox
+from utils.ui_utils import pad_ansi, strip_ansi, drawBox, render_table
 
 
 
@@ -128,109 +130,71 @@ def displayInventory(products, active_modules=None, screen_width=80):
     Displays the state-of-the-art Aura Kiosk Dashboard with perfect centering and alignment.
     """
     mapping = {}
+    rows = []
     idx = 1
-    
-    # Defined constants for layout
-    W_REF = 5
-    W_NAME = 26
-    W_VAL = 14
-    W_STOCK = 26
-    table_width = W_REF + W_NAME + W_VAL + W_STOCK + 5
-    tbl_indent = " " * ((screen_width - table_width) // 2)
-    
-    # High-Definition Border Templates
-    top    = f"{tbl_indent}╔{'═'*W_REF}╦{'═'*W_NAME}╦{'═'*W_VAL}╦{'═'*W_STOCK}╗"
-    header = f"{tbl_indent}╠{'═'*W_REF}╬{'═'*W_NAME}╬{'═'*W_VAL}╬{'═'*W_STOCK}╣"
-    sep    = f"{tbl_indent}╟{'─'*W_REF}╫{'─'*W_NAME}╫{'─'*W_VAL}╫{'─'*W_STOCK}╢"
-    bottom = f"{tbl_indent}╚{'═'*W_REF}╩{'═'*W_NAME}╩{'═'*W_VAL}╩{'═'*W_STOCK}╝"
+    active_modules = active_modules or []
+
+    for name, prod in products.items():
+        req_mod = getattr(getattr(prod, "model", None), "required_module", None) if not isinstance(prod, ProductBundle) else None
+        is_available = not (req_mod and req_mod not in active_modules)
+
+        mapping[str(idx)] = name
+        price_str = f"Rs.{prod.getPrice():,.2f}" if is_available else f"{Colors.DIM}---{Colors.RESET}"
+        stock_val = prod.getAvailableStock()
+
+        stock_color = Colors.SUCCESS
+        status_text = "STABLE"
+        if not is_available:
+            stock_color, status_text = Colors.DIM, "OFFLINE"
+        elif stock_val <= 0:
+            stock_color, status_text = Colors.ERROR, "EMPTY"
+        elif stock_val < 5:
+            stock_color, status_text = Colors.WARNING, "LOW"
+
+        if is_available:
+            filled = min(8, int((stock_val / 20) * 8))
+            bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8 - filled)}{Colors.RESET}"
+            stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
+        else:
+            stock_status = f"{Colors.DIM}[MODULE REQ: {req_mod.upper()}]{Colors.RESET}"
+
+        display_name = name.upper()
+        item_text = f"{Colors.CYAN}● {Colors.TEXT}{display_name}{Colors.RESET}"
+        if not is_available:
+            item_text = f"{Colors.DIM}○ {display_name}{Colors.RESET}"
+        elif isinstance(prod, ProductBundle):
+            item_text = f"{Colors.HEADER}⬢ {Colors.BOLD}{display_name}{Colors.RESET}"
+
+        rows.append([
+            f"{Colors.BOLD if is_available else Colors.DIM}{idx}{Colors.RESET}",
+            item_text,
+            price_str,
+            stock_status,
+        ])
+
+        if isinstance(prod, ProductBundle) and is_available:
+            sub_items = prod.getItems()
+            for i, sub in enumerate(sub_items):
+                conn = "╠═" if i < len(sub_items) - 1 else "╚═"
+                sub_name = sub.getName().upper()
+                rows.append(["", f"{Colors.DIM}  {conn} {sub_name}{Colors.RESET}", "", ""])
+
+        idx += 1
 
     try:
-        print(Colors.BLUE + top)
-        
-        h_ref   = pad_ansi(f" {Colors.CYAN}REF", W_REF, 'center')
-        h_name  = pad_ansi(f" {Colors.CYAN}IDENTIFIER", W_NAME, 'center')
-        h_val   = pad_ansi(f" {Colors.CYAN}VALUATION", W_VAL, 'center')
-        h_stock = pad_ansi(f" {Colors.CYAN}STOCK CAPACITY / STATUS", W_STOCK, 'center')
-        
-        print(f"{tbl_indent}{Colors.BLUE}║{h_ref}{Colors.BLUE}║{h_name}{Colors.BLUE}║{h_val}{Colors.BLUE}║{h_stock}{Colors.BLUE}║")
-        print(Colors.BLUE + header)
-        
-        active_modules = active_modules or []
-        
-        for name, prod in products.items():
-            # Module Check
-            req_mod = getattr(prod.model, "required_module", None) if not isinstance(prod, ProductBundle) else None
-            is_available = not (req_mod and req_mod not in active_modules)
-
-            mapping[str(idx)] = name
-            price_str = f"Rs.{prod.getPrice():,.2f}"
-            stock_val = prod.getAvailableStock()
-            
-            # Stock Logic
-            stock_color = Colors.SUCCESS
-            status_text = "STABLE"
-            if not is_available:
-                stock_color, status_text = Colors.DIM, "OFFLINE"
-            elif stock_val <= 0:
-                stock_color, status_text = Colors.ERROR, "EMPTY "
-            elif stock_val < 5:
-                stock_color, status_text = Colors.WARNING, "LOW   "
-            
-            # Progress Bar (8 segments)
-            if is_available:
-                filled = min(8, int((stock_val / 20) * 8))
-                bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8-filled)}{Colors.RESET}"
-                stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
-            else:
-                stock_status = f"{Colors.DIM}[MODULE REQ: {req_mod.upper()}]{Colors.RESET}"
-
-            is_bundle = isinstance(prod, ProductBundle)
-            display_name = name.upper()
-            
-            if not is_available:
-                item_text = f"{Colors.DIM}○ {display_name}{Colors.RESET}"
-                price_str = f"{Colors.DIM}---{Colors.RESET}"
-            elif is_bundle:
-                item_text = f"{Colors.HEADER}⬢ {Colors.BOLD}{display_name}{Colors.RESET}"
-            else:
-                item_text = f"{Colors.CYAN}● {Colors.TEXT}{display_name}{Colors.RESET}"
-            
-            # Row Printing
-            c_ref   = pad_ansi(f" {Colors.BOLD if is_available else Colors.DIM}{idx:<2}{Colors.RESET}", W_REF, 'center')
-            c_name  = pad_ansi(f" {item_text}", W_NAME)
-            c_val   = pad_ansi(f" {Colors.TEXT if is_available else Colors.DIM}{price_str:>8} ", W_VAL, 'center')
-            c_stock = pad_ansi(f" {stock_status}", W_STOCK)
-            
-            print(f"{tbl_indent}{Colors.BLUE}║{c_ref}{Colors.BLUE}║{c_name}{Colors.BLUE}║{c_val}{Colors.BLUE}║{c_stock}{Colors.BLUE}║")
-            
-            # Bundle Tree
-            if is_bundle and is_available:
-                sub_items = prod.getItems()
-                for i, sub in enumerate(sub_items):
-                    conn = "╠═" if i < len(sub_items) - 1 else "╚═"
-                    sub_text = f" {Colors.DIM}  {conn} {sub.getName().upper()}{Colors.RESET}"
-                    t_name = pad_ansi(sub_text, W_NAME)
-                    t_ref  = pad_ansi("", W_REF)
-                    t_val  = pad_ansi("", W_VAL)
-                    t_stock = pad_ansi("", W_STOCK)
-                    print(f"{tbl_indent}{Colors.BLUE}║{t_ref}{Colors.BLUE}║{t_name}{Colors.BLUE}║{t_val}{Colors.BLUE}║{t_stock}{Colors.BLUE}║")
-            
-            if idx < len(products):
-                print(Colors.BLUE + sep)
-            
-            idx += 1
-        
-        print(Colors.BLUE + bottom + Colors.RESET)
-
+        render_table(
+            ["REF", "IDENTIFIER", "VALUATION", "STOCK CAPACITY / STATUS"],
+            rows,
+            alignments=["center", "left", "center", "left"]
+        )
     except UnicodeEncodeError:
-        # Fallback
         print(f"\n --- CATALOG VIEW ---")
-        print(Colors.BLUE + " +-----+-------------------------+------------+----------------------+")
+        print(" +-----+-------------------------+------------+----------------------+")
         for name, prod in products.items():
             mapping[str(idx)] = name
             print(f" | {idx:<3} | {name.upper():<23} | Rs.{prod.getPrice():>7.2f} | {prod.getAvailableStock():>2} units |")
             idx += 1
-        print(" +-----+-------------------------+------------+----------------------+" + Colors.RESET)
+        print(" +-----+-------------------------+------------+----------------------+")
     
     return mapping
         
@@ -543,21 +507,27 @@ def runKiosk():
         
         # --- KIOSK CONFIGURATION & PRESET SELECTION ---
         config = PersistentLayer.loadConfig()
+        registry = CentralRegistry()
         force_selection = config.get("ALWAYS_ASK_CONFIG", False)
         preset = config.get("KIOSK_PRESET")
+        preset_labels = registry.PRESETS
         
         if not preset or force_selection:
             clearScreen()
             printLogo()
             drawBox("SYSTEM CONFIGURATION", [
                 "Please select the Kiosk Application Type:",
-                " [1]  Food & Beverage (Spiral Dispenser)",
-                " [2]  Medical Pharmacy (Robotic Arm)",
-                " [3]  Cyber-Tech Gear (Conveyor Belt)"
+                f" [1]  {preset_labels['1']['label']}",
+                f" [2]  {preset_labels['2']['label']}",
+                f" [3]  {preset_labels['3']['label']}",
+                f" [4]  {preset_labels['4']['label']}",
+                f" [5]  {preset_labels['5']['label']}",
+                f" [6]  {preset_labels['6']['label']}",
+                f" [7]  {preset_labels['7']['label']}"
             ])
             
             f_choice = input(f"\n {Colors.CYAN}Application Selection >> {Colors.RESET}").strip()
-            modes = {"1": "food", "2": "pharmacy", "3": "tech"}
+            modes = {"1": "food", "2": "pharmacy", "3": "tech", "4": "metro", "5": "university", "6": "hospital", "7": "disaster"}
             preset = modes.get(f_choice, "food")
             
             # Save choice for persistence
@@ -569,6 +539,14 @@ def runKiosk():
             factory = PharmacyKioskFactory()
         elif preset == "tech":
             factory = TechGearFactory()
+        elif preset == "metro":
+            factory = MetroKioskFactory()
+        elif preset == "university":
+            factory = TechGearFactory()
+        elif preset == "hospital":
+            factory = PharmacyKioskFactory()
+        elif preset == "disaster":
+            factory = EmergencyKioskFactory()
         else:
             factory = FoodKioskFactory()
             
@@ -578,7 +556,11 @@ def runKiosk():
         inv_map = {
             "Aura Food & Beverage Kiosk": "inventory_food.json",
             "Aura Medical Pharmacy Kiosk": "inventory_pharmacy.json",
-            "Aura Cyber-Tech Hub": "inventory_tech.json"
+            "Aura Cyber-Tech Hub": "inventory_tech.json",
+            "Aura Metro Essentials Kiosk": "inventory_metro.json",
+            "Aura University Tech Hub": "inventory_tech.json",
+            "Aura Hospital Pharmacy Kiosk": "inventory_pharmacy.json",
+            "Aura Disaster Relief Kiosk": "inventory_disaster.json"
         }
         inventory_file = inv_map.get(kiosk_type_label, "inventory_default.json")
         

@@ -21,7 +21,11 @@ class CentralRegistry:
             cls._instance.PRESETS = {
                 "1": {"label": "Aura Food & Beverage Kiosk", "inventory": "inventory_food.json"},
                 "2": {"label": "Aura Medical Pharmacy Kiosk", "inventory": "inventory_pharmacy.json"},
-                "3": {"label": "Aura Cyber-Tech Hub", "inventory": "inventory_tech.json"}
+                "3": {"label": "Aura Cyber-Tech Hub", "inventory": "inventory_tech.json"},
+                "4": {"label": "Aura Metro Essentials Kiosk", "inventory": "inventory_metro.json"},
+                "5": {"label": "Aura University Tech Hub", "inventory": "inventory_tech.json"},
+                "6": {"label": "Aura Hospital Pharmacy Kiosk", "inventory": "inventory_pharmacy.json"},
+                "7": {"label": "Aura Disaster Relief Kiosk", "inventory": "inventory_disaster.json"}
             }
 
             # No console output for singleton establishment
