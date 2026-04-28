@@ -102,6 +102,61 @@ class PersistentLayer:
         """
         return PersistentLayer.load(filename)
 
+    @staticmethod
+    def loadInventory(inventory_system, filename):
+        """ Specialized loader for the inventory system """
+        from inventory.components.simpleProduct import SimpleProduct
+        from models.productModel import ProductModel
+        from inventory.components.productBundle import ProductBundle
+
+        if not os.path.exists(filename):
+            return False
+            
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+                
+            # Clear existing
+            inventory_system._items = {}
+            
+            for k, p in data.get("products", {}).items():
+                inventory_system.addProduct(k, SimpleProduct(ProductModel(p["id"], p["name"], p["price"], p["stock"])))
+            
+            for k, b in data.get("bundles", {}).items():
+                bundle = ProductBundle(b["name"], b["discount"])
+                for item_key in b["items"]:
+                    prod = inventory_system.getProduct(item_key)
+                    if prod: bundle.add(prod)
+                inventory_system.addProduct(k, bundle)
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def saveInventory(items, filename):
+        """ Specialized saver for the inventory system """
+        from inventory.components.simpleProduct import SimpleProduct
+        from inventory.components.productBundle import ProductBundle
+
+        data = {"products": {}, "bundles": {}}
+        for k, item in items.items():
+            if isinstance(item, SimpleProduct):
+                data["products"][k] = {
+                    "product_id": item.model.product_id,
+                    "name": item.model.name,
+                    "price": item.model.price,
+                    "stock": item.model.stock
+                }
+            elif isinstance(item, ProductBundle):
+                data["bundles"][k] = {
+                    "name": item._name,
+                    "discount": item._discount,
+                    "items": [i.model.name.lower() for i in item._items]
+                }
+        
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=4)
+
     # ---------------- SESSIONS ---------------- #
 
     @staticmethod
@@ -153,9 +208,15 @@ class PersistentLayer:
     @staticmethod
     def saveConfig(config_dict):
         """
-        Save system configuration
+        Save system configuration. Filters out non-serializable objects
+        (like strategy instances) to prevent JSON errors.
         """
-        PersistentLayer.save("config.json", config_dict)
+        serializable_config = {}
+        for k, v in config_dict.items():
+            if isinstance(v, (str, int, float, bool, list, dict, type(None))):
+                serializable_config[k] = v
+        
+        PersistentLayer.save("config.json", serializable_config)
 
     @staticmethod
     def loadConfig():

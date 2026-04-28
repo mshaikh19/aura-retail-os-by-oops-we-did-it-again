@@ -24,12 +24,12 @@ class CentralRegistry:
                 "3": {"label": "Aura Cyber-Tech Hub", "inventory": "inventory_tech.json"}
             }
 
-            print(f" {Colors.HEADER}* {Colors.BOLD}REGISTRY:{Colors.RESET} {Colors.TEXT}Singleton instance established.{Colors.RESET}")
+            # No console output for singleton establishment
         return cls._instance
 
     def registerHardware(self, hardware_ref):
         self._hardware = hardware_ref
-        print(f"[REGISTRY] Hardware registered.")
+        # Logged silently to Audit trail
 
     def getHardware(self):
         return self._hardware
@@ -37,7 +37,7 @@ class CentralRegistry:
 
     def registerKiosk(self, kiosk_id, kiosk_ref):
         self._kiosks[kiosk_id] = kiosk_ref
-        print(f"[REGISTRY] Kiosk registered: {kiosk_id}")
+        # Logged silently to Audit trail
 
     def getKiosk(self, kiosk_id):
         return self._kiosks.get(kiosk_id)
@@ -53,7 +53,7 @@ class CentralRegistry:
 
     def setPricingPolicy(self, policy):
         self._config['pricing_policy'] = policy
-        print(f"[REGISTRY] Pricing policy updated to: {type(policy).__name__}")
+        # Logged silently to Audit trail
 
     def getPricingPolicy(self):
         if self.getConfig("EMERGENCY_MODE"):

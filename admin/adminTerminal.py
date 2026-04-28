@@ -1,4 +1,4 @@
-﻿import time
+import time
 from inventory.components.simpleProduct import SimpleProduct
 from inventory.components.productBundle import ProductBundle
 from persistence.persistenceLayer import PersistentLayer
@@ -46,10 +46,14 @@ def adminFlow(inventory_real, registry, interface, save_callback):
               f"{Colors.CYAN}PRODUCTS:{Colors.RESET} {total_items} | "
               f"{Colors.CYAN}CRITICAL STOCK:{Colors.RESET} {Colors.ERROR if low_stock > 0 else Colors.SUCCESS}{low_stock}{Colors.RESET}")
         
-        # Show recent alerts
+        # Show formatted recent alert
         alerts = MonitoringSystem.getAlerts()
         if alerts:
-            print(f" {Colors.WARNING}RECENT ALERTS:{Colors.RESET} {Colors.DIM}{alerts[-1]}{Colors.RESET}")
+            a = alerts[-1]
+            alert_line = f"{Colors.DIM}[{a['time']}] {Colors.HEADER}{a['src']}: {Colors.RESET}{a['msg']}"
+            print(f" {Colors.WARNING}RECENT ALERT:{Colors.RESET} {alert_line}")
+        else:
+            print(f" {Colors.DIM}RECENT ALERTS: NO CRITICAL EVENTS{Colors.RESET}")
         
         print(f" {Colors.DIM}─" + "─"*58 + Colors.RESET)
         
@@ -77,13 +81,20 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             if not transactions:
                 print(f"\n {Colors.DIM}  No transaction data found for this kiosk type.{Colors.RESET}")
             else:
-                print(f" ╔══════════════════════╦══════════════╦══════╦══════════════╗")
-                print(f" ║ DATA TIMESTAMP       ║ ASSET ID     ║ VOL  ║ REVENUE      ║")
-                print(f" ╠══════════════════════╬══════════════╬══════╬══════════════╣")
+                # Premium Double-Line Table
+                top = f"╔{'═'*22}╦{'═'*14}╦{'═'*6}╦{'═'*14}╗"
+                sep = f"╠{'═'*22}╬{'═'*14}╬{'═'*6}╬{'═'*14}╣"
+                bot = f"╚{'═'*22}╩{'═'*14}╩{'═'*6}╩{'═'*14}╝"
+                header = f"║ {'DATA TIMESTAMP':^20} ║ {'ASSET ID':^12} ║ {'VOL':^4} ║ {'REVENUE':^12} ║"
+
+                print(f" {Colors.CYAN}{top}{Colors.RESET}")
+                print(f" {Colors.CYAN}{header}{Colors.RESET}")
+                print(f" {Colors.CYAN}{sep}{Colors.RESET}")
+                
                 for t in transactions[-12:]:
                     name = t['product_name'][:12]
-                    print(f" ║ {Colors.DIM}{t['timestamp']:<20}{Colors.RESET} ║ {name:<12} ║ {t['quantity']:^4} ║ {Colors.SUCCESS}Rs.{t['total_amount']:>9.2f}{Colors.RESET} ║")
-                print(f" ╚══════════════════════╩══════════════╩══════╩══════════════╝")
+                    print(f" {Colors.CYAN}║{Colors.RESET} {Colors.DIM}{t['timestamp']:<20}{Colors.RESET} {Colors.CYAN}║{Colors.RESET} {name:<12} {Colors.CYAN}║{Colors.RESET} {t['quantity']:^4} {Colors.CYAN}║{Colors.RESET} {Colors.SUCCESS}Rs.{t['total_amount']:>9.2f}{Colors.RESET} {Colors.CYAN}║{Colors.RESET}")
+                print(f" {Colors.CYAN}{bot}{Colors.RESET}")
                 
                 total = sum(t['total_amount'] for t in transactions)
                 print(f"\n {Colors.HEADER} REVENUE TOTAL: {Colors.SUCCESS}Rs.{total:.2f}{Colors.RESET}")
@@ -92,9 +103,15 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         elif choice == "2":
             clearScreen()
             print(f"\n {Colors.HEADER} 📦 INVENTORY HEALTH MONITOR{Colors.RESET}")
-            print(f" ╔══════════════════════════════╦══════════════╦════════════════╗")
-            print(f" ║ ASSET NAME     ║ UNIT COUNT   ║ HEALTH STATUS  ║")
-            print(f" ╠══════════════════════════════╬══════════════╬════════════════╣")
+            # Premium Health Table
+            top = f"╔{'═'*30}╦{'═'*14}╦{'═'*18}╗"
+            sep = f"╠{'═'*30}╬{'═'*14}╬{'═'*18}╣"
+            bot = f"╚{'═'*30}╩{'═'*14}╩{'═'*18}╝"
+            header = f"║ {'ASSET NAME':<28} ║ {'UNIT COUNT':^12} ║ {'HEALTH STATUS':^16} ║"
+
+            print(f" {Colors.HEADER}{top}{Colors.RESET}")
+            print(f" {Colors.HEADER}{header}{Colors.RESET}")
+            print(f" {Colors.HEADER}{sep}{Colors.RESET}")
             
             product_keys = []
             for name, item in items.items():
@@ -105,8 +122,8 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                     if stock < 5: status = f"{Colors.ERROR}CRITICAL{Colors.RESET}"
                     elif stock < 10: status = f"{Colors.WARNING}WARNING{Colors.RESET}"
                     
-                    print(f" ║ {item.model.name:<28} ║ {stock:^12} ║ {status:<23} ║")
-            print(f" ╚══════════════════════════════╩══════════════╩════════════════╝")
+                    print(f" {Colors.HEADER}║{Colors.RESET} {item.model.name:<28} {Colors.HEADER}║{Colors.RESET} {stock:^12} {Colors.HEADER}║{Colors.RESET} {status:^16} {Colors.HEADER}║{Colors.RESET}")
+            print(f" {Colors.HEADER}{bot}{Colors.RESET}")
             
             print(f"\n [R] Restock Specific Item | [B] Bulk Restock (50) | [X] Back")
             sub = input(f" {Colors.CYAN}Selection >> {Colors.RESET}").strip().upper()
@@ -128,12 +145,17 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         elif choice == "3":
             clearScreen()
             print(f"\n {Colors.HEADER} ⚙ CONFIGURATION: PRICING & DISCOUNTS{Colors.RESET}")
+            print(f" {Colors.DIM}╔{'═'*60}╗{Colors.RESET}")
             keys = list(items.keys())
             for i, k in enumerate(keys, 1):
                 item = items[k]
                 val = f"Rs.{item.getPrice():.2f}"
-                if isinstance(item, ProductBundle): val += f" ({item._discount*100}% Disc)"
-                print(f" [{i}] {item.getName():<25} | {val}")
+                if isinstance(item, ProductBundle): 
+                    val += f" ({Colors.WARNING}{item._discount*100}% Disc{Colors.RESET})"
+                
+                line = f" [{i}] {item.getName():<25} | {val}"
+                print(f" {Colors.DIM}║{Colors.RESET} {line:<58} {Colors.DIM}║{Colors.RESET}")
+            print(f" {Colors.DIM}╚{'═'*60}╝{Colors.RESET}")
             
             idx = input(f"\n {Colors.CYAN}Select Index to configure:{Colors.RESET} ").strip()
             try:
@@ -149,19 +171,20 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             except: pass
 
         elif choice == "4":
-            core.executeCommand(None) # Generic ping
-            # In a real app, this would call core diagnostics
-            print(f" {Colors.SUCCESS} Audit Complete. All subsystems nominal.{Colors.RESET}")
-            time.sleep(1.5)
+            clearScreen()
+            interface.runDiagnostics()
+            pauseScreen()
             
         elif choice == "5":
             if core.getSystemStatus() == "EMERGENCY":
                 core.setSystemStatus("ACTIVE")
                 registry.setConfig("EMERGENCY_MODE", False)
+                PersistentLayer.saveConfig(registry._config)
                 print(f" {Colors.SUCCESS} Emergency Mode DEACTIVATED.{Colors.RESET}")
             else:
                 core.setSystemStatus("EMERGENCY")
                 registry.setConfig("EMERGENCY_MODE", True)
+                PersistentLayer.saveConfig(registry._config)
                 print(f" {Colors.WARNING} Emergency Mode ACTIVATED.{Colors.RESET}")
             time.sleep(1.5)
 

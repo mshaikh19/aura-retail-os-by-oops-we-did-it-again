@@ -4,11 +4,14 @@ from core.sessionManager import SessionManager
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
         #creating subsystems 
+        from monitoring.monitoring_system import MonitoringSystem
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
         self.sessionManager = SessionManager()
-        print(f" {Colors.HEADER}◈ {Colors.BOLD}CORE KERNEL:{Colors.RESET} {Colors.TEXT}Aura Retail OS loaded.{Colors.RESET}")
+        
+        # Log to secure audit trail, don't clutter customer screen
+        MonitoringSystem.notify(source="CORE", event_type="KERNEL_LOAD", detail="Aura Retail OS Kernel successfully initialized.")
 
         self.kioskType = kioskType
         self.systemStatus = "ACTIVE"
@@ -20,9 +23,36 @@ class KioskCoreSystem:
 
     def attachModule(self, module):
         """ Attaches a HardwareModule (Decorator) to the system """
+        from monitoring.monitoring_system import MonitoringSystem
         self.top_module = module
-        print(f"{Colors.HEADER}[CORE]{Colors.RESET} Module attached: {type(module).__name__}")
+        mod_name = type(module).__name__
+        # Logged silently to Audit trail
+        MonitoringSystem.notify(source="CORE", event_type="MODULE_ATTACHED", detail=f"New hardware extension added: {mod_name}")
         self.top_module.activate()
+
+    def performInitialScan(self):
+        """ Performs a boot-time health check to log pre-existing alerts """
+        from monitoring.monitoring_system import MonitoringSystem
+        
+        # Check Inventory for pre-existing low stock
+        items = self.inventorySystem._inventory_system._items if hasattr(self.inventorySystem, "_inventory_system") else {}
+        found_issues = 0
+        for name, item in items.items():
+            stock = item.getAvailableStock()
+            if stock < 5:
+                MonitoringSystem.notify(source="BOOT_SCAN", event_type="LOW_STOCK", detail=f"{name.upper()} is critically low ({stock} units)")
+                found_issues += 1
+        
+        # Check for attached modules
+        active_mods = self.getActiveModuleNames()
+        if active_mods:
+             MonitoringSystem.notify(source="BOOT_SCAN", event_type="SYSTEM_READY", detail=f"System online with {len(active_mods)} modules: {', '.join(active_mods)}")
+        else:
+             MonitoringSystem.notify(source="BOOT_SCAN", event_type="SYSTEM_READY", detail="System online (Standard Configuration)")
+             
+        # Issues are logged to Sentinel Audit trail, not printed to user
+        if found_issues > 0:
+             pass
 
     def getModuleStatuses(self):
         """ Returns status of all attached decorators """
@@ -42,15 +72,26 @@ class KioskCoreSystem:
         hw_data = self.hardwareSystem.getStatus() if self.hardwareSystem else {}
         
         # Structure the data into logical groups
+        # Calculate Inventory Health
+        items = self.inventorySystem._inventory_system._items if hasattr(self.inventorySystem, "_inventory_system") else {}
+        total_items = len(items)
+        total_stock = sum(item.getAvailableStock() for item in items.values()) if items else 0
+
         report = {
             "CORE": {
                 "AuraCore Integrity": self.systemStatus,
                 "Kiosk Personality": self.kioskType,
                 "Activity Ledger": f"{len(self.commandHistory)} entries"
             },
+            "INVENTORY": {
+                "Managed SKUs": total_items,
+                "Total Stock": f"{total_stock} units",
+                "Status": "OPTIMIZED" if total_stock > 10 else "LOW_STOCK"
+            },
             "HARDWARE": {
                 "Dispensing Node": hw_data.get("dispenser", "OFFLINE"),
-                "Kiosk Motor Module": "RUNNING" if hw_data.get("motorRunning") else "IDLE"
+                "Kiosk Motor Module": "RUNNING" if hw_data.get("motorRunning") else "IDLE",
+                "Modules Added": ", ".join([m.upper() for m in self.getActiveModuleNames()]) or "NONE"
             },
             "EXTENSIONS": self.getModuleStatuses()
         }
@@ -73,9 +114,7 @@ class KioskCoreSystem:
             return False
 
         try:
-            print(f"\n{Colors.HEADER}[CORE]{Colors.RESET} Executing {command.__class__.__name__}...")
-
-            # 3. Execute command
+            # 3. Execute command silently
             result = command.execute(self)
 
             # 4. Save history
@@ -87,7 +126,6 @@ class KioskCoreSystem:
                     t = command.last_transaction
                     self.sessionManager.linkTransaction(t.transaction_id, t.total_amount)
 
-            print(f"{Colors.HEADER}[CORE]{Colors.RESET} Command executed successfully.")
             return True
 
         except Exception as e:
@@ -112,7 +150,7 @@ class KioskCoreSystem:
 
         if status in validStates:
             self.systemStatus = status
-            print(f"{Colors.HEADER}[CORE]{Colors.RESET} System status changed to {status}")
+            # Status change logged to memory
         else:
             print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} Invalid system status.")
 
