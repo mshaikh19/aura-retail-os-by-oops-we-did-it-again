@@ -48,6 +48,14 @@ class PurchaseCommand(Command):
         if core.paymentSystem is None:
             raise Exception("Payment system unavailable")
 
+        inventory_snapshot = None
+        if core.inventorySystem:
+            inventory_snapshot = {
+                key: item.model.stock
+                for key, item in core.inventorySystem._items.items()
+                if hasattr(item, "model") and hasattr(item.model, "stock")
+            }
+
         # ---------------- PAYMENT NETWORK CHECK ---------------- #
         if self.paymentMethod in ["UPI", "CARD"]:
             active_modules = core.getActiveModuleNames()
@@ -56,57 +64,69 @@ class PurchaseCommand(Command):
 
         # ---------------- PAYMENT ---------------- #
 
-        transaction = core.paymentSystem.makePayment(
-            self.paymentMethod,
-            totalAmount,
-            self.product.getName(),
-            self.quantity,
-            kiosk_type=core.kioskType
-        )
+        transaction = None
 
-        if not transaction:
-            raise Exception("Payment failed")
-
-        self.last_transaction = transaction
-
-        # ---------------- HARDWARE DISPENSE ---------------- #
-
-        if core.hardwareSystem:
-            print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Sending request to hardware...")
-
-            success = core.hardwareSystem.dispenseProduct(
+        try:
+            transaction = core.paymentSystem.makePayment(
+                self.paymentMethod,
+                totalAmount,
                 self.product.getName(),
-                self.quantity
+                self.quantity,
+                kiosk_type=core.kioskType
             )
 
-            # ---------------- TASK 7.3: FAILURE SIMULATION ---------------- #
-            if random.random() < 0.0:   # 0% failure chance
-                print(f"{Colors.ERROR}[HARDWARE]{Colors.RESET} Simulated hardware failure")
-                success = False
+            if not transaction:
+                raise Exception("Payment failed")
 
-            # ---------------- ATOMIC TRANSACTION (4.2) ---------------- #
-            if not success:
-                print(f"{Colors.ERROR}[Purchase]{Colors.RESET} Dispense failed — rolling back")
+            self.last_transaction = transaction
 
-                # rollback payment
-                core.paymentSystem.refund(self.paymentMethod)
+            # ---------------- HARDWARE DISPENSE ---------------- #
 
-                # system goes into error state
-                core.setSystemStatus("ERROR")
+            if core.hardwareSystem:
+                print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Sending request to hardware...")
 
-                raise Exception("Transaction rolled back due to hardware failure")
+                success = core.hardwareSystem.dispenseProduct(
+                    self.product.getName(),
+                    self.quantity
+                )
 
-        # ---------------- INVENTORY UPDATE ---------------- #
+                # ---------------- TASK 7.3: FAILURE SIMULATION ---------------- #
+                if random.random() < 0.0:   # 0% failure chance
+                    print(f"{Colors.ERROR}[HARDWARE]{Colors.RESET} Simulated hardware failure")
+                    success = False
 
-        if core.inventorySystem:
-            product_key = core.inventorySystem.findKeyForProduct(self.product)
+                # ---------------- ATOMIC TRANSACTION (4.2) ---------------- #
+                if not success:
+                    raise Exception("Dispense failed")
 
-            if product_key:
-                core.inventorySystem.reduceStock(product_key, self.quantity)
+            # ---------------- INVENTORY UPDATE ---------------- #
+
+            if core.inventorySystem:
+                product_key = core.inventorySystem.findKeyForProduct(self.product)
+
+                if product_key:
+                    core.inventorySystem.reduceStock(product_key, self.quantity)
+                else:
+                    self.product.reduceStock(self.quantity)
             else:
                 self.product.reduceStock(self.quantity)
-        else:
-            self.product.reduceStock(self.quantity)
+
+        except Exception as exc:
+            if transaction:
+                print(f"{Colors.ERROR}[Purchase]{Colors.RESET} Transaction failed — rolling back")
+                core.paymentSystem.refund(self.paymentMethod)
+
+            if inventory_snapshot and core.inventorySystem:
+                for key, stock in inventory_snapshot.items():
+                    item = core.inventorySystem.getProduct(key)
+                    if item is not None and hasattr(item, "model"):
+                        item.model.stock = stock
+
+            core.setSystemStatus("ERROR")
+
+            if str(exc) == "Dispense failed":
+                raise Exception("Transaction rolled back due to hardware failure")
+            raise
 
         print(f"{Colors.HEADER}[Purchase]{Colors.RESET} Purchase completed successfully.")
 
