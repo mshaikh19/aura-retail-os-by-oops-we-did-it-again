@@ -121,7 +121,18 @@ class PersistentLayer:
             inventory_system._items = {}
             
             for k, p in data.get("products", {}).items():
-                inventory_system.addProduct(k, SimpleProduct(ProductModel(p["product_id"], p["name"], p["price"], p["stock"])))
+                inventory_system.addProduct(
+                    k,
+                    SimpleProduct(
+                        ProductModel(
+                            p["product_id"],
+                            p["name"],
+                            p["price"],
+                            p["stock"],
+                            p.get("required_module")
+                        )
+                    )
+                )
             
             for k, b in data.get("bundles", {}).items():
                 bundle = ProductBundle(b["name"], b["discount"])
@@ -154,7 +165,8 @@ class PersistentLayer:
                     "product_id": item.model.product_id,
                     "name": item.model.name,
                     "price": item.model.price,
-                    "stock": item.model.stock
+                    "stock": item.model.stock,
+                    "required_module": item.model.required_module
                 }
             elif isinstance(item, ProductBundle):
                 bundle_item_keys = []

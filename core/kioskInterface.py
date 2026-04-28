@@ -29,6 +29,16 @@ class KioskInterface:
             print(f"{Colors.ERROR}[INTERFACE ERROR]{Colors.RESET} Invalid input for purchase")
             return
 
+        required_module = getattr(getattr(product, "model", None), "required_module", None)
+        if required_module:
+            active_modules = [m.lower() for m in (self.core.getActiveModuleNames() or [])]
+            if required_module.lower() not in active_modules:
+                print(
+                    f"{Colors.ERROR}[INTERFACE]{Colors.RESET} {product.getName()} is locked. "
+                    f"Requires {required_module.upper()} module before purchase."
+                )
+                return False
+
         """
             Process the request
         """

@@ -134,9 +134,16 @@ def displayInventory(products, active_modules=None, screen_width=80):
     idx = 1
     active_modules = active_modules or []
 
+    def _is_module_available(required_module):
+        if not required_module:
+            return True
+        normalized = str(required_module).strip().lower()
+        return normalized in [m.lower() for m in active_modules]
+
     for name, prod in products.items():
         req_mod = getattr(getattr(prod, "model", None), "required_module", None) if not isinstance(prod, ProductBundle) else None
-        is_available = not (req_mod and req_mod not in active_modules)
+        module_ready = _is_module_available(req_mod)
+        is_available = module_ready
 
         mapping[str(idx)] = name
         price_str = f"Rs.{prod.getPrice():,.2f}" if is_available else f"{Colors.DIM}---{Colors.RESET}"
@@ -145,7 +152,7 @@ def displayInventory(products, active_modules=None, screen_width=80):
         stock_color = Colors.SUCCESS
         status_text = "IN STOCK"
         if not is_available:
-            stock_color, status_text = Colors.DIM, "OFFLINE"
+            stock_color, status_text = Colors.DIM, "LOCKED"
         elif stock_val <= 0:
             stock_color, status_text = Colors.ERROR, "OUT STOCK"
         elif stock_val <= 5:
@@ -157,7 +164,8 @@ def displayInventory(products, active_modules=None, screen_width=80):
             status_slot = f"[{status_text:<9}]"
             stock_status = f"{stock_color}{status_slot}{Colors.RESET} {bar} {stock_color}{stock_val:>3}u{Colors.RESET}"
         else:
-            stock_status = f"{Colors.DIM}[MODULE REQ: {req_mod.upper()}]{Colors.RESET}"
+            locked_label = f"MODULE REQ: {str(req_mod).upper()}" if req_mod else "MODULE REQ"
+            stock_status = f"{Colors.DIM}[{locked_label:<18}]{Colors.RESET} {Colors.DIM}░░░░░░░░   0u{Colors.RESET}"
 
         display_name = name.upper()
         item_text = f"{Colors.CYAN}● {Colors.TEXT}{display_name}{Colors.RESET}"
@@ -253,6 +261,16 @@ def purchaseFlow(interface, products):
     
     if not item:
         print(Colors.ERROR + " ! Invalid reference selection." + Colors.RESET)
+        pauseScreen()
+        return
+
+    required_module = getattr(getattr(item, "model", None), "required_module", None)
+    if required_module and required_module.lower() not in [m.lower() for m in active_modules]:
+        print(
+            Colors.ERROR
+            + f" ! {item.getName()} is locked. Requires {required_module.upper()} module before purchase."
+            + Colors.RESET
+        )
         pauseScreen()
         return
 
