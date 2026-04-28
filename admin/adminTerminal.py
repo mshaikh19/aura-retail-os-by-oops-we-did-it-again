@@ -5,7 +5,7 @@ from persistence.persistenceLayer import PersistentLayer
 from monitoring.monitoringSystem import MonitoringSystem
 
 from utils.colors import Colors
-from utils.ui_utils import drawBox
+from utils.ui_utils import drawBox, render_table
 
 def clearScreen():
     import os
@@ -80,25 +80,17 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             if not transactions:
                 print(f"\n {Colors.DIM}  No transaction data found for this kiosk type.{Colors.RESET}")
             else:
-                # Premium Double-Line Table
-                top = f"╔{'═'*22}╦{'═'*14}╦{'═'*6}╦{'═'*14}╗"
-                sep = f"╠{'═'*22}╬{'═'*14}╬{'═'*6}╬{'═'*14}╣"
-                bot = f"╚{'═'*22}╩{'═'*14}╩{'═'*6}╩{'═'*14}╝"
-                header = f"║ {'DATA TIMESTAMP':^20} ║ {'ASSET ID':^12} ║ {'VOL':^4} ║ {'REVENUE':^12} ║"
-
-                print(f" {Colors.CYAN}{top}{Colors.RESET}")
-                print(f" {Colors.CYAN}{header}{Colors.RESET}")
-                print(f" {Colors.CYAN}{sep}{Colors.RESET}")
-                
+                # Build rows for the last 12 transactions
+                rows = []
                 for t in transactions[-12:]:
-                    name = t['product_name'][:12]
-                    c_time = pad_ansi(f"{Colors.DIM}{t['timestamp']}{Colors.RESET}", 20, 'left')
-                    c_asset = pad_ansi(name, 12, 'left')
-                    c_vol = pad_ansi(str(t['quantity']), 4, 'center')
-                    c_rev = pad_ansi(f"{Colors.SUCCESS}Rs.{t['total_amount']:>9.2f}{Colors.RESET}", 12, 'right')
-                    print(f" {Colors.CYAN}║{Colors.RESET} {c_time} {Colors.CYAN}║{Colors.RESET} {c_asset} {Colors.CYAN}║{Colors.RESET} {c_vol} {Colors.CYAN}║{Colors.RESET} {c_rev} {Colors.CYAN}║{Colors.RESET}")
-                print(f" {Colors.CYAN}{bot}{Colors.RESET}")
-                
+                    ts = f"{Colors.DIM}{t['timestamp']}{Colors.RESET}"
+                    asset = t['product_name'][:12]
+                    vol = str(t['quantity'])
+                    rev = f"{Colors.SUCCESS}Rs.{t['total_amount']:,.2f}{Colors.RESET}"
+                    rows.append([ts, asset, vol, rev])
+
+                render_table(["DATA TIMESTAMP", "ASSET ID", "VOL", "REVENUE"], rows, title=None)
+
                 total = sum(t['total_amount'] for t in transactions)
                 print(f"\n {Colors.HEADER} REVENUE TOTAL: {Colors.SUCCESS}Rs.{total:.2f}{Colors.RESET}")
             pauseScreen()
@@ -106,18 +98,9 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         elif choice == "2":
             clearScreen()
             print(f"\n {Colors.HEADER} 📦 INVENTORY HEALTH MONITOR{Colors.RESET}")
-            # Premium Health Table
-            top = f"╔{'═'*30}╦{'═'*14}╦{'═'*18}╗"
-            sep = f"╠{'═'*30}╬{'═'*14}╬{'═'*18}╣"
-            bot = f"╚{'═'*30}╩{'═'*14}╩{'═'*18}╝"
-            header = f"║ {'ASSET NAME':<28} ║ {'UNIT COUNT':^12} ║ {'HEALTH STATUS':^16} ║"
-
-            from utils.ui_utils import pad_ansi
-            print(f" {Colors.HEADER}{top}{Colors.RESET}")
-            print(f" {Colors.HEADER}{header}{Colors.RESET}")
-            print(f" {Colors.HEADER}{sep}{Colors.RESET}")
-            
+            # Build inventory health rows
             product_keys = []
+            rows = []
             for name, item in items.items():
                 if isinstance(item, SimpleProduct):
                     product_keys.append(name)
@@ -125,12 +108,9 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                     status = f"{Colors.SUCCESS}STABLE{Colors.RESET}"
                     if stock < 5: status = f"{Colors.ERROR}CRITICAL{Colors.RESET}"
                     elif stock < 10: status = f"{Colors.WARNING}WARNING{Colors.RESET}"
-                    
-                    c_name = pad_ansi(item.model.name, 28, 'left')
-                    c_stock = pad_ansi(str(stock), 12, 'center')
-                    c_status = pad_ansi(status, 16, 'center')
-                    print(f" {Colors.HEADER}║{Colors.RESET} {c_name} {Colors.HEADER}║{Colors.RESET} {c_stock} {Colors.HEADER}║{Colors.RESET} {c_status} {Colors.HEADER}║{Colors.RESET}")
-            print(f" {Colors.HEADER}{bot}{Colors.RESET}")
+                    rows.append([item.model.name, str(stock), status])
+
+            render_table(["ASSET NAME", "UNIT COUNT", "HEALTH STATUS"], rows)
             
             print(f"\n [R] Restock Specific Item | [B] Bulk Restock (50) | [X] Back")
             sub = input(f" {Colors.CYAN}Selection >> {Colors.RESET}").strip().upper()
@@ -153,19 +133,17 @@ def adminFlow(inventory_real, registry, interface, save_callback):
             clearScreen()
             from utils.ui_utils import pad_ansi
             print(f"\n {Colors.HEADER} ⚙ CONFIGURATION: PRICING & DISCOUNTS{Colors.RESET}")
-            print(f" {Colors.DIM}╔{'═'*60}╗{Colors.RESET}")
             keys = list(items.keys())
+            rows = []
             for i, k in enumerate(keys, 1):
                 item = items[k]
                 val = f"Rs.{item.getPrice():.2f}"
                 if isinstance(item, ProductBundle): 
                     val += f" ({Colors.WARNING}{item._discount*100}% Disc{Colors.RESET})"
-                
-                content = f" [{i}] {item.getName():<25} | {val}"
-                line_text = pad_ansi(content, 58, 'left')
-                print(f" {Colors.DIM}║{Colors.RESET} {line_text} {Colors.DIM}║{Colors.RESET}")
-            print(f" {Colors.DIM}╚{'═'*60}╝{Colors.RESET}")
-            
+                rows.append([str(i), item.getName(), val])
+
+            render_table(["#", "ITEM", "PRICE"], rows)
+
             idx = input(f"\n {Colors.CYAN}Select Index to configure:{Colors.RESET} ").strip()
             try:
                 target_name = keys[int(idx)-1]
@@ -234,10 +212,14 @@ def adminFlow(inventory_real, registry, interface, save_callback):
                             " [1]  Food & Beverage",
                             " [2]  Medical Pharmacy",
                             " [3]  Cyber-Tech Gear",
-                            " [4]  Cancel"
+                            " [4]  Metro Essentials",
+                            " [5]  University Tech Hub",
+                            " [6]  Hospital Pharmacy",
+                            " [7]  Disaster Relief",
+                            " [8]  Cancel"
                         ])
                         nm = input(f"\n {Colors.CYAN}New Mode >> {Colors.RESET}").strip()
-                        modes = {"1": "food", "2": "pharmacy", "3": "tech"}
+                        modes = {"1": "food", "2": "pharmacy", "3": "tech", "4": "metro", "5": "university", "6": "hospital", "7": "disaster"}
                         if nm in modes:
                             config["KIOSK_PRESET"] = modes[nm]
                             PersistentLayer.saveConfig(config)
