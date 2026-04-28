@@ -151,6 +151,10 @@ class KioskCoreSystem:
             print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} System in ERROR state.")
             return False
 
+        if self.systemStatus == "MAINTENANCE":
+            print(f"{Colors.WARNING}[CORE]{Colors.RESET} Maintenance mode active. Operations paused.")
+            return False
+
         if self.systemStatus == "EMERGENCY":
             print(f"{Colors.WARNING}[CORE]{Colors.RESET} Emergency mode active. Limited operations.")
             return True
@@ -159,7 +163,7 @@ class KioskCoreSystem:
 
     def setSystemStatus(self, status):
 
-        validStates = ["ACTIVE", "ERROR", "EMERGENCY"]
+        validStates = ["ACTIVE", "ERROR", "EMERGENCY", "MAINTENANCE"]
 
         if status in validStates:
             self.systemStatus = status

@@ -50,9 +50,15 @@ class PurchaseCommand(Command):
 
         inventory_snapshot = None
         if core.inventorySystem:
+            items_source = None
+            if hasattr(core.inventorySystem, "_items"):
+                items_source = core.inventorySystem._items
+            elif hasattr(core.inventorySystem, "_inventory_system") and hasattr(core.inventorySystem._inventory_system, "_items"):
+                items_source = core.inventorySystem._inventory_system._items
+
             inventory_snapshot = {
                 key: item.model.stock
-                for key, item in core.inventorySystem._items.items()
+                for key, item in (items_source or {}).items()
                 if hasattr(item, "model") and hasattr(item.model, "stock")
             }
 
