@@ -143,18 +143,19 @@ def displayInventory(products, active_modules=None, screen_width=80):
         stock_val = prod.getAvailableStock()
 
         stock_color = Colors.SUCCESS
-        status_text = "STABLE"
+        status_text = "IN STOCK"
         if not is_available:
             stock_color, status_text = Colors.DIM, "OFFLINE"
         elif stock_val <= 0:
-            stock_color, status_text = Colors.ERROR, "EMPTY"
-        elif stock_val < 5:
-            stock_color, status_text = Colors.WARNING, "LOW"
+            stock_color, status_text = Colors.ERROR, "OUT STOCK"
+        elif stock_val <= 5:
+            stock_color, status_text = Colors.WARNING, "LOW STOCK"
 
         if is_available:
             filled = min(8, int((stock_val / 20) * 8))
             bar = f"{stock_color}{'█' * filled}{Colors.DIM}{'░' * (8 - filled)}{Colors.RESET}"
-            stock_status = f"{stock_color}[{status_text}]{Colors.RESET} {bar} {stock_color}{stock_val:>2}u{Colors.RESET}"
+            status_slot = f"[{status_text:<9}]"
+            stock_status = f"{stock_color}{status_slot}{Colors.RESET} {bar} {stock_color}{stock_val:>3}u{Colors.RESET}"
         else:
             stock_status = f"{Colors.DIM}[MODULE REQ: {req_mod.upper()}]{Colors.RESET}"
 
