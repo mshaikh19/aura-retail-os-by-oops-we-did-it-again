@@ -536,10 +536,13 @@ def shutdownScreen(core):
         "",
         "  [STATUS]  Memory Purged",
         "  [STATUS]  Hardware Disconnected",
-        "  [STATUS]  Session Synchronized"
+        "  [STATUS]  Session Synchronized",
+        "",
+        f" {Colors.CYAN}Developed by Oops, We Did It Again!{Colors.RESET}"
     ])
     
     print("\n" + centerLine(f"{Colors.DIM}Thank you for choosing Aura Retail Technologies.{Colors.RESET}", width))
+    print(centerLine(f"{Colors.HEADER}◈ {Colors.BOLD}Oops, We Did It Again!{Colors.RESET}", width))
     time.sleep(1.2)
 
 def runKiosk():
