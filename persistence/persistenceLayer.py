@@ -249,6 +249,8 @@ class PersistentLayer:
         """
         serializable_config = {}
         for k, v in config_dict.items():
+            if k == "pricing_policy":
+                continue
             if isinstance(v, (str, int, float, bool, list, dict, type(None))):
                 serializable_config[k] = v
         
