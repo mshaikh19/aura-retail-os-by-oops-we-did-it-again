@@ -24,8 +24,12 @@ class PersistentLayer:
         # Ensure data folder exists
         os.makedirs(PersistentLayer.BASE_PATH, exist_ok=True)
 
+        def json_serial(obj):
+            """JSON serializer for objects not serializable by default json code"""
+            return str(obj)
+
         with open(file_path, "w") as file:
-            json.dump(data_dict, file, indent=4)
+            json.dump(data_dict, file, indent=4, default=json_serial)
 
     @staticmethod
     def load(filename):
@@ -245,6 +249,8 @@ class PersistentLayer:
         """
         serializable_config = {}
         for k, v in config_dict.items():
+            if k == "pricing_policy":
+                continue
             if isinstance(v, (str, int, float, bool, list, dict, type(None))):
                 serializable_config[k] = v
         
