@@ -1,141 +1,115 @@
 # Aura Retail OS
 
-> **A Smart Automated Retail Kiosk System** built with Python, demonstrating core Object-Oriented Programming principles through a fully simulated retail environment.
+> **A Smart Vending Machine System** built with Python. This project shows how to build a complex system using clean coding principles (OOP) that is easy to understand, change, and expand.
 
 ---
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [OOP Design Patterns](#oop-design-patterns)
+- [What is Aura?](#what-is-aura)
+- [Cool Features](#cool-features)
+- [How it's Organized](#how-its-organized)
+- [Coding Patterns Used](#coding-patterns-used)
 - [Getting Started](#getting-started)
-- [Team](#team)
+- [Security & Maintenance](#security--maintenance)
+- [The Team](#the-team)
 
 ---
 
-## Overview
+## What is Aura?
 
-**Aura Retail OS** is a terminal-based kiosk management system developed as a group project for **IT620 – Object-Oriented Programming**. It simulates a real-world automated retail kiosk, supporting purchasing, refunding, inventory restocking, and system diagnostics — all driven by clean OOP architecture.
+**Aura Retail OS** is a terminal-based program that acts like a real-world self-service kiosk. It was built for an Object-Oriented Programming course. Instead of just selling snacks, it can be configured to sell medicine, tech gear, or even emergency supplies for disaster relief.
 
 ---
 
-## Features
+## Cool Features
 
-| Feature | Description |
+| Feature | What it does |
 |---|---|
-| **Purchase Items** | Browse available products, select quantity, and pay via UPI, Card, or Wallet |
-| **Refund Transactions** | Process refunds through the same payment method used at purchase |
-| **Restock Inventory** | Add stock to existing products through the kiosk interface |
-| **System Diagnostics** | View real-time system status and command execution history |
-| **Premium Terminal UI** | Colored ASCII box interface for a professional kiosk look and feel |
-| **Inventory Proxy** | Security logging layer for all inventory access |
+| **Vending Presets** | Change the machine to a Food, Pharmacy, or Tech shop in one click. |
+| **Smart Buying** | Checks if items are in stock and if the right hardware is active before selling. |
+| **Simple Refunds** | Easily give money back for items bought in the current session. |
+| **Hardware Simulation** | Acts like real hardware with robotic arms and dispensers. |
+| **Dynamic Prices** | Prices can change automatically (e.g., lower prices in emergencies). |
+| **Admin Panel** | A secret menu for owners to restock items and check system health. |
+| **Technician Tools** | A special menu to test hardware and add modules like Solar Panels. |
+| **Premium Look** | Uses colors and boxes to look like a professional modern terminal. |
 
 ---
 
-## Project Structure
+## How it's Organized
 
-```
+We split the code into different folders to keep things tidy:
+
+```text
 Project/
 │
-├── main.py                         # Entry point — UI screens & kiosk loop
+├── main.py                         # The main entry point to start the system
 │
-├── core/                           # Core system logic
-│   ├── kiosk_core_system.py        # Central command executor & state manager
-│   ├── kioskInterface.py           # High-level facade for all kiosk operations
-│   └── commands/                   # Command Pattern implementations
-│       ├── command.py              # Abstract base Command class
-│       ├── purchase_command.py     # Handles full purchase flow
-│       ├── refund_command.py       # Handles refund processing
-│       └── restock_command.py      # Handles inventory restocking
+├── admin/
+│   └── adminTerminal.py            # The secret menu for owners (needs a PIN)
 │
-├── models/
-│   └── productModel.py             # Plain data model for a product (id, name, price, stock)
+├── core/                           # The "brain" of the system
+│   ├── bootstrapper.py             # Handles the startup process
+│   ├── kioskCoreSystem.py          # Runs the main logic and commands
+│   ├── kioskInterface.py           # A simple way for the UI to talk to the brain
+│   └── commands/                   # Individual actions like Buy, Refund, and Restock
 │
-├── inventory/
-│   ├── components/
-│   │   ├── product.py              # Abstract base class for all products
-│   │   ├── simpleProduct.py        # Concrete product wrapping ProductModel
-│   │   └── inventoryManager.py     # Utility for displaying inventory
-│   └── security/
-│       └── inventoryProxy.py       # Proxy pattern — security logging for inventory access
+├── factory/                        # Used to create different types of kiosks
 │
-├── payment/
-│   ├── payment_system.py           # Payment facade routing to adapters
-│   ├── interfaces/
-│   │   └── payment_processor.py   # Abstract interface for all payment processors
-│   └── adapters/
-│       ├── upi_adapter.py          # UPI payment adapter
-│       ├── card_adapter.py         # Card payment adapter
-│       └── wallet_adapter.py       # Wallet payment adapter
+├── hardware/                       # Controls the simulated motors and sensors
+│   └── modules/                    # Add-ons like Solar Panels or 5G Network
 │
-├── hardware/                       # Hardware abstraction layer (extensible)
-│   ├── dispensers/
-│   ├── interfaces/
-│   └── modules/
+├── inventory/                      # Manages products, bundles, and pricing
 │
-├── monitoring/                     # System monitoring (extensible)
-├── persistence/                    # Data persistence (extensible)
-├── registry/                       # Component registry (extensible)
-└── utils/                          # Utility helpers (extensible)
+├── monitoring/                     # Keeps a log of everything that happens
+│
+├── payment/                        # Handles UPI, Card, and Wallet payments
+│
+├── persistence/                    # Saves your data to files so it's not lost
+│
+└── registry/                       # Stores the system's settings in one place
 ```
 
 ---
 
-## OOP Design Patterns
+## Coding Patterns Used
 
-This project is a practical demonstration of **5 core OOP design patterns**:
+This project uses **10 common design patterns** to keep the code clean:
 
-### 1. Command Pattern
+1.  **Abstract Factory**: To build different kiosk types (like Food vs. Pharmacy) easily.
+2.  **Command**: To turn actions like "Buy" into objects that can be logged or undone.
+3.  **Decorator**: To "wrap" the machine with extra features like Solar Power.
+4.  **Strategy**: To swap pricing rules (Standard vs. Emergency) on the fly.
+5.  **Observer**: To let the system know when something happens (like a hardware error).
+6.  **Facade**: To give the UI a simple set of buttons to press.
+7.  **Adapter**: To make different payment types (UPI, Card) work the same way.
+8.  **Proxy**: To add security checks before accessing inventory or hardware.
+9.  **Singleton**: To make sure there is only one "Settings" object in the whole app.
+10. **Composite**: To group items together into "Bundles" and treat them as one product.
 
-Each user action (purchase, refund, restock) is encapsulated as a `Command` object. The `KioskCoreSystem` executes these commands uniformly, logs them to history, and handles errors centrally.
+---
 
-```
-Command (base)
-├── PurchaseCommand
-├── RefundCommand
-└── RestockCommand
-```
+## Security & Maintenance
 
-### 2. Facade Pattern
+Aura includes a **Field Service Console** for technicians. You need a Technician ID to get in.
 
-`KioskInterface` acts as a simplified front door to the complex core system. The UI only calls `purchaseItem()`, `refundTransaction()`, or `restockInventory()` — without knowing how commands are created or dispatched.
-
-### 3. Adapter Pattern
-
-Each payment method (UPI, Card, Wallet) has a different internal API, but all are adapted to a common `PaymentProcessor` interface. `PaymentSystem` selects the right adapter at runtime.
-
-```
-PaymentProcessor (interface)
-├── UPIAdapter
-├── CardAdapter
-└── WalletAdapter
-```
-
-### 4. Abstraction & Inheritance
-
-`Product` is an abstract base class (ABC) enforcing a contract across all product types. `SimpleProduct` inherits from `Product` and composes a `ProductModel` (data) — cleanly separating behaviour from data.
+*   **Change Parts**: Swap out the vending mechanism (Robotic Arm vs. Spiral).
+*   **Add Power**: Deploy Solar Panels or turn on Refrigeration.
+*   **Fix Jams**: See which product slots are stuck and fix them.
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### What you need
+- **Python 3.10** or newer.
+- A modern terminal (like Windows Terminal or VS Code Terminal) for colors to work.
 
-- Python **3.8+**
-- No external libraries required — uses only the Python standard library
-
-### Running the Kiosk
-
-```bash
-# Navigate to the project directory
-
-# Run the kiosk
-python main.py
-```
-
-> **Note:** ANSI color codes are used for the terminal UI. Run in **Windows Terminal**, **PowerShell**, or any terminal that supports ANSI escape sequences for the best experience.
+### How to run it
+1. Open your terminal in the project folder.
+2. Type `python main.py` and press Enter.
+3. Follow the on-screen instructions to pick your kiosk and start buying!
 
 ---
 
@@ -148,12 +122,17 @@ python main.py
 
 ---
 
-## Team
+## The Team
 
-> **Course:** IT620 – Object-Oriented Programming  
-> **Semester:** Semester 2  
-> **Team Name:** Oops, We Did It Again
+- **Course**: IT620 – Object-Oriented Programming
+- **Semester**: Semester 2
+- **Team Name**: Oops, We Did It Again!
+- **Members**:
+  - Maryam Shaikh
+  - Manushree Thakkar
+  - Anistina Dsouza
+  - Ruchita Patadiya
 
 ---
 
-*Built with and OOP principles.*
+*Built with passion and clean code.*
