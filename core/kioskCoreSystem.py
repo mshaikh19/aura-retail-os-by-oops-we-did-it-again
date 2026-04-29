@@ -1,10 +1,12 @@
 from utils.colors import Colors
 from core.sessionManager import SessionManager
+import time
+import threading
 
 class KioskCoreSystem:
     def __init__(self, inventorySystem=None, paymentSystem=None, hardwareSystem=None, kioskType="CORE"):
         #creating subsystems 
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         self.inventorySystem = inventorySystem
         self.paymentSystem = paymentSystem
         self.hardwareSystem = hardwareSystem
@@ -16,6 +18,8 @@ class KioskCoreSystem:
         self.kioskType = kioskType
         self.systemStatus = "ACTIVE"
         self.commandHistory = []
+        # Simple counter for active in-flight commands to support safe hot-swap
+        self._active_commands = 0
         #keeps track of executed commands
         
         # Decorator management (Hardware Modules)
@@ -23,7 +27,7 @@ class KioskCoreSystem:
 
     def attachModule(self, module):
         """ Attaches a HardwareModule (Decorator) to the system """
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         self.top_module = module
         mod_name = type(module).__name__
         # Logged silently to Audit trail
@@ -32,7 +36,7 @@ class KioskCoreSystem:
 
     def performInitialScan(self):
         """ Performs a boot-time health check to log pre-existing alerts """
-        from monitoring.monitoring_system import MonitoringSystem
+        from monitoring.monitoringSystem import MonitoringSystem
         
         # Check Inventory for pre-existing low stock
         items = self.inventorySystem._inventory_system._items if hasattr(self.inventorySystem, "_inventory_system") else {}
@@ -114,6 +118,9 @@ class KioskCoreSystem:
             return False
 
         try:
+            # mark active command
+            self._active_commands += 1
+
             # 3. Execute command silently
             result = command.execute(self)
 
@@ -131,11 +138,21 @@ class KioskCoreSystem:
         except Exception as e:
             print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} {str(e)}")
             return False
+        finally:
+            # decrement active counter in all cases
+            try:
+                self._active_commands = max(0, self._active_commands - 1)
+            except Exception:
+                self._active_commands = 0
 
     def checkSystemStatus(self):
 
         if self.systemStatus == "ERROR":
             print(f"{Colors.ERROR}[CORE ERROR]{Colors.RESET} System in ERROR state.")
+            return False
+
+        if self.systemStatus == "MAINTENANCE":
+            print(f"{Colors.WARNING}[CORE]{Colors.RESET} Maintenance mode active. Operations paused.")
             return False
 
         if self.systemStatus == "EMERGENCY":
@@ -146,7 +163,7 @@ class KioskCoreSystem:
 
     def setSystemStatus(self, status):
 
-        validStates = ["ACTIVE", "ERROR", "EMERGENCY"]
+        validStates = ["ACTIVE", "ERROR", "EMERGENCY", "MAINTENANCE"]
 
         if status in validStates:
             self.systemStatus = status
@@ -159,3 +176,44 @@ class KioskCoreSystem:
 
     def getCommandHistory(self):
         return self.commandHistory
+
+    # ---------------- HOT-SWAP SUPPORT ---------------- #
+    def replaceDispenser(self, new_dispenser, timeout: float = 5.0) -> bool:
+        """Safely replace the dispenser at runtime.
+
+        Steps:
+        1. Put system into MAINTENANCE to prevent new operations.
+        2. Wait for in-flight commands to finish or until timeout.
+        3. Swap dispenser on hardwareSystem.
+        4. Restore previous system state.
+        Returns True on success, False on timeout/failure.
+        """
+        from monitoring.monitoringSystem import MonitoringSystem
+
+        prev_status = self.systemStatus
+        self.setSystemStatus("MAINTENANCE")
+
+        start = time.time()
+        while self._active_commands > 0 and (time.time() - start) < timeout:
+            time.sleep(0.05)
+
+        if self._active_commands > 0:
+            MonitoringSystem.notify(source="CORE", event_type="HOTSWAP_FAILED", detail="Timeout waiting for active commands to finish")
+            # restore previous status
+            self.setSystemStatus(prev_status)
+            return False
+
+        # perform swap
+        try:
+            if self.hardwareSystem:
+                self.hardwareSystem.swapDispenser(new_dispenser)
+                MonitoringSystem.notify(source="CORE", event_type="HOTSWAP_SUCCESS", detail=f"Dispenser swapped to {new_dispenser.__class__.__name__}")
+            else:
+                MonitoringSystem.notify(source="CORE", event_type="HOTSWAP_FAILED", detail="No hardware system present")
+                self.setSystemStatus(prev_status)
+                return False
+        finally:
+            # restore previous status
+            self.setSystemStatus(prev_status)
+
+        return True

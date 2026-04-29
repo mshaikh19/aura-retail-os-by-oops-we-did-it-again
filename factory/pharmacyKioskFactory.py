@@ -3,8 +3,8 @@ from hardware.dispensers.roboticDispenser import RoboticDispenser
 from utils.colors import Colors
 
 class PharmacyKioskFactory(KioskFactory):
-    def __init__(self):
-        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}FACTORY:{Colors.RESET} {Colors.TEXT}Medical Blueprint selected.{Colors.RESET}")
+    def __init__(self, display_name="Medical Pharmacy Blueprint"):
+        print(f" {Colors.SUCCESS}◈ {Colors.BOLD}FACTORY:{Colors.RESET} {Colors.TEXT}{display_name} selected.{Colors.RESET}")
     """
     Concrete Factory for Medical/Pharmacy Kiosks.
     Uses Robotic arms for precise handling of medication.

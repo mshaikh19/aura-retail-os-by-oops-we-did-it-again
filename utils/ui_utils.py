@@ -45,3 +45,71 @@ def drawBox(title, lines, screen_width=80):
         for line in lines:
             print(indent + Colors.BLUE + "| " + Colors.TEXT + line.ljust(width-4) + Colors.BLUE + " |")
         print(indent + Colors.BLUE + "+" + "-"*(width-2) + "+" + Colors.RESET)
+
+
+def render_table(headers, rows, title=None, screen_width=80, alignments=None):
+    """Render a boxed table with Unicode borders. Handles ANSI colors safely.
+
+    headers: list of header strings
+    rows: list of row lists (strings)
+    """
+    # compute column widths based on stripped lengths
+    cols = len(headers)
+    col_max = [len(strip_ansi(h)) for h in headers]
+    for r in rows:
+        for i in range(cols):
+            cell = r[i] if i < len(r) else ""
+            col_max[i] = max(col_max[i], len(strip_ansi(str(cell))))
+
+    # add padding of 2 (one space each side)
+    inner = [w + 2 for w in col_max]
+    alignments = alignments or ['left'] * cols
+    if len(alignments) < cols:
+        alignments = alignments + ['left'] * (cols - len(alignments))
+
+    table_width = sum(inner) + (cols - 1)  # account for column separators
+    indent = " " * max(0, (screen_width - table_width - 2) // 2)
+
+    try:
+        # top border
+        top = indent + Colors.BLUE + "╔" + "╦".join(["═" * w for w in inner]) + "╗"
+        print(top)
+
+        # title row if provided
+        if title:
+            title_plain = strip_ansi(title)
+            title_pad = pad_ansi(title, table_width, 'center')
+            print(f"{indent}{Colors.BLUE}║{Colors.RESET}{title_pad}{Colors.BLUE}║")
+            print(indent + Colors.BLUE + "╠" + "╬".join(["═" * w for w in inner]) + "╣")
+
+        # header
+        header_cells = [pad_ansi(f" {h} ", inner[i], 'center') for i, h in enumerate(headers)]
+        print(indent + Colors.BLUE + "║" + Colors.RESET + "║".join(header_cells) + Colors.BLUE + "║")
+
+        # separator
+        print(indent + Colors.BLUE + "╠" + "╬".join(["═" * w for w in inner]) + "╣")
+
+        # rows
+        for ri, r in enumerate(rows):
+            cells = []
+            for i in range(cols):
+                cell = str(r[i]) if i < len(r) else ""
+                cells.append(pad_ansi(f" {cell} ", inner[i], alignments[i]))
+            print(indent + Colors.BLUE + "║" + Colors.RESET + "║".join(cells) + Colors.BLUE + "║")
+
+        # bottom border
+        print(indent + Colors.BLUE + "╚" + "╩".join(["═" * w for w in inner]) + "╝" + Colors.RESET)
+    except UnicodeEncodeError:
+        # fallback simple ascii
+        width = sum(inner) + cols - 1
+        print(indent + "+" + "-" * width + "+")
+        if title:
+            print(indent + "| " + title.center(width-2) + " |")
+            print(indent + "+" + "-" * width + "+")
+        header_line = "|" + "|".join([h.center(inner[i]) for i, h in enumerate(headers)]) + "|"
+        print(indent + header_line)
+        print(indent + "+" + "-" * width + "+")
+        for r in rows:
+            row_line = "|" + "|".join([str(r[i]).ljust(inner[i]) if i < len(r) else "" .ljust(inner[i]) for i in range(cols)]) + "|"
+            print(indent + row_line)
+        print(indent + "+" + "-" * width + "+")

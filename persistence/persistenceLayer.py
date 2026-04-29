@@ -125,13 +125,32 @@ class PersistentLayer:
             inventory_system._items = {}
             
             for k, p in data.get("products", {}).items():
-                inventory_system.addProduct(k, SimpleProduct(ProductModel(p["id"], p["name"], p["price"], p["stock"])))
+                inventory_system.addProduct(
+                    k,
+                    SimpleProduct(
+                        ProductModel(
+                            p["product_id"],
+                            p["name"],
+                            p["price"],
+                            p["stock"],
+                            p.get("required_module")
+                        )
+                    )
+                )
             
             for k, b in data.get("bundles", {}).items():
                 bundle = ProductBundle(b["name"], b["discount"])
                 for item_key in b["items"]:
                     prod = inventory_system.getProduct(item_key)
-                    if prod: bundle.add(prod)
+                    if not prod:
+                        # Backward compatibility: older files stored product names instead of keys.
+                        norm = str(item_key).strip().lower()
+                        for candidate in inventory_system._items.values():
+                            if hasattr(candidate, "model") and getattr(candidate.model, "name", "").strip().lower() == norm:
+                                prod = candidate
+                                break
+                    if prod:
+                        bundle.add(prod)
                 inventory_system.addProduct(k, bundle)
             return True
         except Exception:
@@ -150,13 +169,24 @@ class PersistentLayer:
                     "product_id": item.model.product_id,
                     "name": item.model.name,
                     "price": item.model.price,
-                    "stock": item.model.stock
+                    "stock": item.model.stock,
+                    "required_module": item.model.required_module
                 }
             elif isinstance(item, ProductBundle):
+                bundle_item_keys = []
+                for child in item._items:
+                    child_key = None
+                    for candidate_key, candidate_item in items.items():
+                        if candidate_item is child:
+                            child_key = candidate_key
+                            break
+                    if child_key:
+                        bundle_item_keys.append(child_key)
+
                 data["bundles"][k] = {
                     "name": item._name,
                     "discount": item._discount,
-                    "items": [i.model.name.lower() for i in item._items]
+                    "items": bundle_item_keys
                 }
         
         file_path = PersistentLayer._getFilePath(filename)
