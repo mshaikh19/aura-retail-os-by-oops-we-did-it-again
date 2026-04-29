@@ -98,64 +98,65 @@ class KioskInterface:
         Unified interface for checking all subsystem health.
         """
         data = self.core.getOperationalStatus()
-        width = 60
+        width = 80
+        indent = " " * 0 # Using relative centering or fixed indent
         
-        print("\n" + Colors.BLUE + " ╔" + "═"*(width-2) + "╗" + Colors.RESET)
-        title_text = pad_ansi(Colors.BOLD + Colors.CYAN + "❖ SYSTEM DIAGNOSTICS ENGINE" + Colors.RESET, width-2, 'center')
-        print(f" {Colors.BLUE}║{title_text}{Colors.BLUE}║{Colors.RESET}")
-        print(Colors.BLUE + " ╠" + "═"*(width-2) + "╣" + Colors.RESET)
-        
+        # Helper to print a centered boxed section
+        def print_section(title, lines, is_first=False):
+            from utils.ui_utils import pad_ansi
+            if is_first:
+                print("\n" + Colors.BLUE + " ╔" + "═"*(width-2) + "╗" + Colors.RESET)
+                title_text = pad_ansi(Colors.BOLD + Colors.CYAN + title + Colors.RESET, width-2, 'center')
+                print(f" {Colors.BLUE}║{title_text}{Colors.BLUE}║{Colors.RESET}")
+                print(Colors.BLUE + " ╠" + "═"*(width-2) + "╣" + Colors.RESET)
+            else:
+                print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
+                header_text = pad_ansi("  " + Colors.BOLD + title + Colors.RESET, width-2, 'left')
+                print(f" {Colors.BLUE}║{header_text}{Colors.BLUE}║{Colors.RESET}")
+
+            for line in lines:
+                content = pad_ansi("    " + line, width-2, 'left')
+                print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+
+
         # 1. Render Core Section
         core_data = data["CORE"]
         status_color = Colors.SUCCESS if core_data["AuraCore Integrity"] == "ACTIVE" else Colors.ERROR
-        
-        lines = [
-            f"{Colors.BOLD}AURACORE INTEGRITY:{Colors.RESET}",
+        core_lines = [
             f" > Status:      {status_color}{core_data['AuraCore Integrity']}{Colors.RESET}",
             f" > Personality: {Colors.TEXT}{core_data['Kiosk Personality']}{Colors.RESET}",
             f" > Activity:    {Colors.DIM}{core_data['Activity Ledger']}{Colors.RESET}"
         ]
-        
-        for line in lines:
-            content = pad_ansi("  " + line, width-2, 'left')
-            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+        print_section("❖ SYSTEM DIAGNOSTICS ENGINE", core_lines, is_first=True)
         
         # 2. Render Inventory Section
         inv = data["INVENTORY"]
-        print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
-        lines = [
-            f"{Colors.BOLD}INVENTORY HEALTH:{Colors.RESET}",
+        inv_lines = [
             f" > Managed SKUs:  {Colors.HEADER}{inv['Managed SKUs']}{Colors.RESET}",
             f" > Total Stock:   {Colors.TEXT}{inv['Total Stock']}{Colors.RESET}",
             f" > Health Status: {Colors.SUCCESS if inv['Status'] == 'OPTIMIZED' else Colors.WARNING}{inv['Status']}{Colors.RESET}"
         ]
-        for line in lines:
-            content = pad_ansi("  " + line, width-2, 'left')
-            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+        print_section("INVENTORY HEALTH", inv_lines)
 
         # 3. Render Hardware Section
         hw = data["HARDWARE"]
-        print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
-        lines = [
-            f"{Colors.BOLD}HARDWARE STACK:{Colors.RESET}",
+        hw_lines = [
             f" > Dispense Node: {Colors.HEADER}{hw['Dispensing Node']}{Colors.RESET}",
             f" > Kinetic Drive: {Colors.DIM}{hw['Kiosk Motor Module']}{Colors.RESET}",
             f" > Added Modules: {Colors.CYAN}{hw['Modules Added']}{Colors.RESET}"
         ]
-        for line in lines:
-            content = pad_ansi("  " + line, width-2, 'left')
-            print(f" {Colors.BLUE}║{content}{Colors.BLUE}║{Colors.RESET}")
+        print_section("HARDWARE STACK", hw_lines)
         
         # 4. Render Extensions Section (if any)
         ext = data["EXTENSIONS"]
         if ext:
-            print(Colors.BLUE + " ╟" + "─"*(width-2) + "╢" + Colors.RESET)
-            print(f" {Colors.BLUE}║{pad_ansi('  ' + Colors.BOLD + 'ACTIVE EXTENSIONS:', width-2)}{Colors.BLUE}║{Colors.RESET}")
+            ext_lines = []
             for key, val in ext.items():
-                content = f"   + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}"
-                print(f" {Colors.BLUE}║{pad_ansi('  ' + content, width-2)}{Colors.BLUE}║{Colors.RESET}")
+                ext_lines.append(f" + {key.upper():<12} {Colors.SUCCESS}{val}{Colors.RESET}")
+            print_section("ACTIVE EXTENSIONS", ext_lines)
         
         print(Colors.BLUE + " ╚" + "═"*(width-2) + "╝" + Colors.RESET)
+
         
         # Fetch alerts from Monitoring System
         try:
