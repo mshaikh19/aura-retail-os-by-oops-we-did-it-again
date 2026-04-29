@@ -189,6 +189,7 @@ Aura includes a **Field Service Console** for technicians. You need a Technician
     <td colspan = 2><img width="1920" height="1200" alt="Screenshot (301)" src="https://github.com/user-attachments/assets/08f7dcc1-4d17-4e69-b006-92540e5d7b3b" /></td>
   </tr>
 </table>
+
 ---
 
 ## The Team
