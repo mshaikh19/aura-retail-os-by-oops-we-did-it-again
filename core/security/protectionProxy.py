@@ -15,7 +15,7 @@ class TechnicianSecurityProxy:
     def authenticate(self, tech_id):
         """ Validates the technician ID """
         # In a real system, this would check a secure database
-        valid_ids = ["TECH-777", "ADMIN-001"]
+        valid_ids = ["TECH", "ADMIN"]
         
         if tech_id in valid_ids:
             self._authorized = True

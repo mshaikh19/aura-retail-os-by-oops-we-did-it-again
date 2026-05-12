@@ -7,6 +7,7 @@ from monitoring.monitoringSystem import MonitoringSystem
 from utils.colors import Colors
 from utils.ui_utils import drawBox, render_table
 
+# Util functions for better view
 def clearScreen():
     import os
     if os.name == 'nt': os.system('cls')
@@ -23,7 +24,6 @@ def pauseScreen():
 def adminFlow(inventory_real, registry, interface, save_callback):
     """ 
     ADMINISTRATIVE MODULE
-    Decoupled from the main customer terminal.
     Handles Inventory Health, Sales Analytics, and Configuration.
     """
     kiosk_type = registry.getConfig("TYPE") or "CORE"
@@ -33,16 +33,16 @@ def adminFlow(inventory_real, registry, interface, save_callback):
         print(f"\n {Colors.HEADER}{Colors.BOLD} AURA OS | {kiosk_type.upper()} ADMIN{Colors.RESET}")
         print(f" {Colors.DIM}" + "-"*58 + Colors.RESET)
         items = inventory_real._items
-        total_items = len([i for i in items.values() if isinstance(i, SimpleProduct)])
-        low_stock = len([i for i in items.values() if isinstance(i, SimpleProduct) and i.getAvailableStock() < 5])
+        totalItems = len([i for i in items.values() if isinstance(i, SimpleProduct)])
+        lowStock = len([i for i in items.values() if isinstance(i, SimpleProduct) and i.getAvailableStock() < 5])
         
         core = registry.getKiosk("AURA-001")
         sys_status = core.getSystemStatus()
         status_color = Colors.SUCCESS if sys_status == "ACTIVE" else (Colors.WARNING if sys_status == "EMERGENCY" else Colors.ERROR)
 
         print(f" {Colors.CYAN}SYSTEM STATUS:{Colors.RESET} {status_color}{sys_status}{Colors.RESET} | "
-              f"{Colors.CYAN}PRODUCTS:{Colors.RESET} {total_items} | "
-              f"{Colors.CYAN}CRITICAL STOCK:{Colors.RESET} {Colors.ERROR if low_stock > 0 else Colors.SUCCESS}{low_stock}{Colors.RESET}")
+              f"{Colors.CYAN}PRODUCTS:{Colors.RESET} {totalItems} | "
+              f"{Colors.CYAN}CRITICAL STOCK:{Colors.RESET} {Colors.ERROR if lowStock > 0 else Colors.SUCCESS}{lowStock}{Colors.RESET}")
         
         # Show formatted recent alert
         alerts = MonitoringSystem.getAlerts()
