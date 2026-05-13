@@ -32,7 +32,7 @@ class PurchaseCommand(Command):
 
         # ---------------- TASK 7.2: HARDWARE DEPENDENCY ---------------- #
 
-        required_module = getattr(self.product.model, "required_module", None)
+        required_module = getattr(getattr(self.product, "model", None), "required_module", None)
 
         if required_module:
             active_modules = core.getActiveModuleNames()
