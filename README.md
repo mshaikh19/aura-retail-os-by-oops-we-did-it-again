@@ -197,8 +197,7 @@ Aura includes a **Field Service Console** for technicians. You need a Technician
 - **Course**: IT620 – Object-Oriented Programming
 - **Semester**: Semester 2
 - **Team Name**: Oops, We Did It Again!
-- **Members**: @mshaikh19 | @Manushri_thakkar | @Anistina-Dsouza | @Patadiya Ruchita Alkesh
-
+- **Members**: [Maryam Shaikh](https://github.com/mshaikh19) | [Manushri Thakkar](https://github.com/Manushri3080) | [Anistina Dsouza](https://github.com/Anistina-Dsouza) | [Patadiya Ruchita](https://github.com/RuchitaPatadiya)
 ---
 
 *Built with passion and OOPs!.*
